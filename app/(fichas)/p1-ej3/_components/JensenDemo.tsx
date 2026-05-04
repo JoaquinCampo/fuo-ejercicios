@@ -6,7 +6,6 @@ import {
   Plot,
   Line,
   Point,
-  Polygon,
   Text,
   useMovablePoint,
   Theme,
@@ -95,19 +94,17 @@ export function JensenDemo() {
 
           <Plot.OfX y={f} color={Theme.indigo} weight={2.5} />
 
-          {/* Triángulo formado por los 3 puntos del gráfico */}
-          <Polygon
-            points={[
-              [x1, f1],
-              [x2, f2],
-              [x3, f3],
-            ]}
-            color={Theme.red}
-            fillOpacity={0.08}
-            weight={1.5}
+          {/* Línea vertical guía en xbar (de eje x al punto más alto) */}
+          <Line.Segment
+            point1={[xbar, 0]}
+            point2={[xbar, ybar]}
+            color={Theme.indigo}
+            opacity={0.25}
+            weight={1}
+            style="dashed"
           />
 
-          {/* Gap entre f(xbar) y ybar */}
+          {/* Gap entre f(xbar) y ybar (la barra naranja) */}
           <Line.Segment
             point1={[xbar, fxbar]}
             point2={[xbar, ybar]}
@@ -115,46 +112,48 @@ export function JensenDemo() {
             weight={5}
           />
 
-          {/* Punto sobre la curva en xbar */}
+          {/* Punto sobre la curva: f(Σλᵢxᵢ) - lado izquierdo de Jensen */}
           <Point x={xbar} y={fxbar} color={Theme.indigo} />
 
-          {/* Punto del lado derecho de Jensen */}
-          <Point
-            x={xbar}
-            y={ybar}
-            color={Theme.orange}
-            svgCircleProps={{ fill: "white", strokeWidth: 2 }}
-          />
+          {/* Punto Σλᵢf(xᵢ) - lado derecho de Jensen */}
+          <Point x={xbar} y={ybar} color={Theme.orange} />
 
-          {/* Etiquetas xi en eje */}
-          <Text x={x1} y={-0.25} attach="s" size={13}>
+          {/* Etiquetas xi pegadas a los puntos en la curva */}
+          <Text x={x1} y={f1 + 0.35} attach="n" size={14}>
             {`x_1`}
           </Text>
-          <Text x={x2} y={-0.25} attach="s" size={13}>
+          <Text x={x2} y={f2 + 0.35} attach="n" size={14}>
             {`x_2`}
           </Text>
-          <Text x={x3} y={-0.25} attach="s" size={13}>
+          <Text x={x3} y={f3 + 0.35} attach="n" size={14}>
             {`x_3`}
           </Text>
-          <Text
-            x={xbar}
-            y={-0.05}
-            attach="n"
-            size={12}
-            color="var(--color-warning)"
-          >
-            {`x̄`}
-          </Text>
 
-          {/* Etiqueta del gap */}
+          {/* Etiqueta del lado derecho de Jensen (Σλᵢf(xᵢ)) */}
           <Text
-            x={xbar + 0.15}
-            y={(fxbar + ybar) / 2}
+            x={xbar + 0.18}
+            y={ybar}
             attach="e"
             size={13}
             color="var(--color-warning)"
           >
-            {`gap = ${gap.toFixed(2)}`}
+            {`Σ λᵢ f(xᵢ) = ${ybar.toFixed(2)}`}
+          </Text>
+
+          {/* Etiqueta del lado izquierdo de Jensen (f(Σλᵢxᵢ)) */}
+          <Text
+            x={xbar + 0.18}
+            y={fxbar}
+            attach="e"
+            size={13}
+            color={Theme.indigo}
+          >
+            {`f(Σ λᵢ xᵢ) = ${fxbar.toFixed(2)}`}
+          </Text>
+
+          {/* Etiqueta de xbar en el eje */}
+          <Text x={xbar} y={-0.15} attach="s" size={12}>
+            {`x̄ = ${xbar.toFixed(2)}`}
           </Text>
 
           {p1.element}
@@ -192,11 +191,16 @@ export function JensenDemo() {
           <Tex tex={inequalityTex} />
         </div>
         <div className="text-xs text-ink-500">
-          Arrastrá los puntos x₁, x₂, x₃ sobre la curva y movés los pesos λᵢ.
-          El triángulo rojo es el casco convexo de los puntos imagen; el lado
-          derecho de Jensen, Σλᵢ f(xᵢ), siempre cae <em>dentro</em> de él.
-          El segmento naranja mide la separación con f(Σλᵢxᵢ), el lado
-          izquierdo. Para f convexa, el gap es siempre ≥ 0.
+          Los dos puntos están alineados verticalmente en x̄ = Σλᵢxᵢ. El{" "}
+          <span style={{ color: "var(--color-indigo, #6359e9)" }}>
+            azul
+          </span>{" "}
+          es f(x̄), el lado izquierdo de Jensen. El{" "}
+          <span style={{ color: "var(--color-warning)" }}>naranja</span> es
+          Σλᵢf(xᵢ), el lado derecho. La barra mide el gap entre ellos. Para f
+          convexa, el naranja siempre queda arriba del azul (gap ≥ 0).
+          Movés los puntos sobre la curva o cambiás los pesos λᵢ y ves el gap
+          en vivo.
         </div>
       </div>
     </div>

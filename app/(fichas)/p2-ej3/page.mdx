@@ -1,0 +1,492 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { ArmijoCheckDemo } from "./_components/ArmijoCheckDemo";
+import { PLInequalityDemo } from "./_components/PLInequalityDemo";
+import { LinearRateDemo } from "./_components/LinearRateDemo";
+
+export const metadata = {
+  title: "P2-Ej3: Convergencia lineal de steepest descent con regla de Armijo",
+  description:
+    "Bajo fuerte convexidad y la regla de Armijo, steepest descent converge linealmente: f(x_k) - f* ≤ r^k (f(x_0) - f*).",
+};
+
+<FichaHeader
+  practico={2}
+  ejercicio={3}
+  title="Convergencia lineal de steepest descent con Armijo"
+  estimated_minutes={90}
+/>
+
+## Motivación
+
+En el P2-Ej2 vimos que steepest descent con paso fijo $\alpha < 1/L$ sobre
+una función convexa $L$-smooth converge como $O(1/k)$. Ahí "$L$-smooth" es
+una cota de **arriba** sobre la curvatura ($\nabla^2 f \preceq L\,I$).
+
+Si además tenemos una cota **por abajo**, $\nabla^2 f \succeq m\,I$ (fuerte
+convexidad con módulo $m$), y reemplazamos el paso fijo por una **búsqueda
+de línea** con la regla de Armijo, la tasa salta de sub-lineal $1/k$ a
+**lineal** (geométrica): $f(x_k) - f^* \leq r^k\,(f(x_0) - f^*)$ con
+$r < 1$ explícito en términos de $m, M$ y los parámetros $\sigma, \beta$.
+
+La diferencia es enorme. Para gap $10^{-6}$, la cota sub-lineal pide
+$\sim 10^6$ iteraciones; la lineal pide $\sim \log(10^6)/\log(1/r)$, o sea
+**docenas o cientos**. Casi todas las garantías "rápidas" en optimización
+salen de esta misma estructura: cota cuadrática + PL.
+
+## Definiciones y herramientas
+
+<Definition title="Hessiana acotada por arriba y por abajo (m, M)">
+$f \in C^2$ satisface
+$$
+m\,\|y\|^2 \;\leq\; y^{\top}\,\nabla^2 f(x)\,y \;\leq\; M\,\|y\|^2
+\quad \forall\, x, y \in \mathbb{R}^n,
+$$
+es decir $m\,I \preceq \nabla^2 f(x) \preceq M\,I$. La cota inferior es
+**fuerte convexidad** con módulo $m$. La cota superior implica que
+$\nabla f$ es $M$-Lipschitz (lo mismo que pedíamos $L = M$ en P2-Ej2). El
+cociente $\kappa = M/m \geq 1$ es el **número de condición**.
+</Definition>
+
+<Definition title="Regla de Armijo (backtracking)">
+Fijados $\sigma, \beta \in (0, 1)$, en cada paso se elige $\alpha_k$ como el
+**mayor** $\alpha = \beta^{j}$ ($j = 0, 1, 2, \ldots$) que satisface
+$$
+f(x_k - \alpha\,\nabla f(x_k)) \;\leq\; f(x_k) - \sigma\,\alpha\,\|\nabla f(x_k)\|^2.
+$$
+
+**Lectura**. La línea $\alpha \mapsto f(x_k) - \sigma\alpha\|\nabla f\|^2$ es
+un "objetivo de descenso": pide caer al menos una fracción $\sigma$ del
+descenso predicho por la tangente. $\sigma$ pequeño es exigencia laxa,
+$\sigma$ grande es exigencia dura. $\beta$ es el factor de retroceso.
+</Definition>
+
+## Enunciado
+
+Sea $f \in C^2$ con $m\,I \preceq \nabla^2 f \preceq M\,I$ y único
+minimizante global $x^* \in \mathbb{R}^n$. Sea $\sigma, \beta \in (0,1)$ y
+sea $x_{k+1} = x_k - \alpha_k\,\nabla f(x_k)$ con $\alpha_k$ elegido por
+Armijo.
+
+- **(a)** Mostrar que para todo $\alpha > 0$,
+  $$
+  f(x_k - \alpha\,\nabla f(x_k)) \;\leq\; f(x_k) - \alpha\,\|\nabla f(x_k)\|^2 + \tfrac{M}{2}\,\alpha^2\,\|\nabla f(x_k)\|^2.
+  $$
+- **(b)** Probar que Armijo se satisface si $\alpha \leq 2(1-\sigma)/M$ y deducir
+  $\alpha_k \geq 2\beta(1-\sigma)/M$, con lo que
+  $$
+  f(x_{k+1}) \;\leq\; f(x_k) - \tfrac{2\beta\sigma(1-\sigma)}{M}\,\|\nabla f(x_k)\|^2.
+  $$
+- **(c)** Probar la **desigualdad PL**: $\|\nabla f(x)\|^2 \geq 2m\,(f(x) - f(x^*))$.
+- **(d)** Concluir convergencia lineal:
+  $$
+  f(x_{k+1}) - f(x^*) \;\leq\; r\,(f(x_k) - f(x^*)), \quad r = 1 - \tfrac{4 m \beta \sigma (1-\sigma)}{M}.
+  $$
+
+---
+
+## Parte (a): cota cuadrática a lo largo del rayo de descenso
+
+### Intuición
+
+Es exactamente el lema de descenso del P2-Ej2 aplicado a lo largo del rayo
+$y = x_k - \alpha\,\nabla f(x_k)$, usando $L = M$ como constante de
+Lipschitz del gradiente. La hipótesis de cota superior de Hessiana ya implica
+$M$-Lipschitz; por eso este apartado no usa fuerte convexidad.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Taylor con resto integral hasta orden 2">
+Sea $\phi(\alpha) = f(x_k - \alpha\,\nabla f(x_k))$. Por Taylor con resto
+integral (o por el lema de descenso del P2-Ej2),
+$$
+\phi(\alpha) \;=\; f(x_k) + \alpha\,\langle \nabla f(x_k),\, -\nabla f(x_k)\rangle + \int_0^\alpha (\alpha - s)\,\phi''(s)\,ds.
+$$
+
+<Why>
+Es Taylor de primer orden con resto integral exacto: se obtiene integrando
+dos veces $\phi''$. El término lineal queda $\alpha\cdot\phi'(0)$. Como
+$\phi'(s) = -\langle \nabla f(x_k - s\,\nabla f(x_k)), \nabla f(x_k)\rangle$,
+en $s = 0$ vale $-\|\nabla f(x_k)\|^2$.
+</Why>
+</Step>
+
+<Step n={2} title="Acotar el resto con la cota superior de la Hessiana">
+$\phi''(s) = \nabla f(x_k)^{\top}\,\nabla^2 f(x_k - s\,\nabla f(x_k))\,\nabla f(x_k)
+\leq M\,\|\nabla f(x_k)\|^2$ por hipótesis. Entonces
+$$
+\int_0^\alpha (\alpha - s)\,\phi''(s)\,ds \;\leq\; M\,\|\nabla f(x_k)\|^2 \int_0^\alpha (\alpha - s)\,ds \;=\; \tfrac{M}{2}\,\alpha^2\,\|\nabla f(x_k)\|^2.
+$$
+
+<Why>
+**No usamos fuerte convexidad.** Solo la cota superior de la Hessiana entra
+acá. La integral $\int_0^\alpha (\alpha - s)\,ds = \alpha^2/2$ es estándar.
+Es la misma técnica que la prueba del lema de descenso (TFC + Lipschitz)
+disfrazada como Taylor.
+</Why>
+</Step>
+
+<Step n={3} title="Combinar">
+$$
+\phi(\alpha) \;\leq\; f(x_k) - \alpha\,\|\nabla f(x_k)\|^2 + \tfrac{M}{2}\,\alpha^2\,\|\nabla f(x_k)\|^2. \quad\square
+$$
+
+<Why>
+Esta es la **cota cuadrática a lo largo del rayo de descenso**. Es una
+parábola en $\alpha$ con vértice en $\alpha^* = 1/M$ y mínimo $f(x_k) - \|\nabla f(x_k)\|^2/(2M)$.
+Es la pieza fundamental de toda la prueba: vamos a comparar esa parábola
+con la línea de Armijo para sacar (b).
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (b): Armijo se cumple para α suficientemente chico
+
+### Intuición
+
+La línea de Armijo $L_\sigma(\alpha) = f(x_k) - \sigma\,\alpha\,\|\nabla f\|^2$
+es **menos exigente** que la tangente $L(\alpha) = f(x_k) - \alpha\,\|\nabla f\|^2$:
+tiene pendiente menor en valor absoluto. La cota de (a) es una **parábola**
+$U(\alpha)$ que arranca tangente a $L$ y se curva hacia arriba con
+coeficiente $M/2 \cdot \|\nabla f\|^2$. Crucial: $U(\alpha) \leq L_\sigma(\alpha)$
+para $\alpha$ pequeño y se cruzan en $\alpha = 2(1-\sigma)/M$.
+
+<ArmijoCheckDemo />
+
+Como Armijo pide $\phi \leq L_\sigma$ y por (a) sabemos $\phi \leq U$,
+basta con que $U \leq L_\sigma$ para garantizar Armijo.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Comparar U(α) con la línea de Armijo">
+Por (a), $\phi(\alpha) \leq U(\alpha) := f(x_k) - \alpha\,\|\nabla f(x_k)\|^2 + \tfrac{M}{2}\,\alpha^2\,\|\nabla f(x_k)\|^2$.
+Queremos $\phi \leq L_\sigma$, donde $L_\sigma(\alpha) = f(x_k) - \sigma\alpha\|\nabla f\|^2$.
+
+Pediremos $U \leq L_\sigma$:
+$$
+-\alpha + \tfrac{M}{2}\alpha^2 \;\leq\; -\sigma\,\alpha
+\;\iff\;
+\alpha\,\Big(\tfrac{M}{2}\,\alpha - (1 - \sigma)\Big) \leq 0.
+$$
+
+Para $\alpha > 0$ esto equivale a $\alpha \leq 2(1-\sigma)/M$.
+
+<Why>
+Dividimos ambos lados por $\|\nabla f(x_k)\|^2 > 0$ (suponemos $\nabla f(x_k) \neq 0$;
+si fuera cero, ya estamos en el óptimo). El paso clave es factorizar $\alpha$.
+La primer raíz $\alpha = 0$ es trivial; la segunda $\alpha = 2(1-\sigma)/M$
+es el "borde" hasta donde la parábola sigue debajo de la línea $L_\sigma$.
+Después se cruza y la garantía deja de valer.
+</Why>
+</Step>
+
+<Step n={2} title="Cota inferior para el paso de Armijo αₖ">
+Por la regla de búsqueda, $\alpha_k$ es el mayor $\beta^j$ que cumple Armijo.
+Como Armijo se cumple para $\alpha \leq 2(1-\sigma)/M$, si en algún momento
+$\beta^j \leq 2(1-\sigma)/M$ entonces ese $\beta^j$ pasa el test. El primer $j$
+tal que $\beta^j \leq 2(1-\sigma)/M$ satisface también $\beta^{j-1} > 2(1-\sigma)/M$,
+por lo que $\beta^j = \beta\cdot \beta^{j-1} > 2\beta(1-\sigma)/M$. Concluimos
+$$
+\alpha_k \;\geq\; \frac{2\beta(1-\sigma)}{M}.
+$$
+
+<Why>
+La regla de Armijo retrocede multiplicando por $\beta$ hasta encontrar un
+$\alpha$ admisible. **No estamos diciendo que el primer admisible sea
+exactamente $2(1-\sigma)/M$**: puede ser más grande (si la función es
+"más amable" que el peor caso de la cota). Lo que decimos es que retroceder
+"un poco más allá" del umbral garantiza Armijo, así que el $\alpha_k$ que
+elige el algoritmo no puede ser tan chico como uno quiera: queda **acotado
+inferiormente** por $2\beta(1-\sigma)/M$.
+</Why>
+</Step>
+
+<Step n={3} title="Convertir en descenso por iteración">
+Como $\alpha_k$ pasa Armijo,
+$$
+f(x_{k+1}) \;\leq\; f(x_k) - \sigma\,\alpha_k\,\|\nabla f(x_k)\|^2
+\;\leq\; f(x_k) - \frac{2\beta\sigma(1-\sigma)}{M}\,\|\nabla f(x_k)\|^2.
+\quad\square
+$$
+
+<Why>
+La primera desigualdad es la condición de Armijo en sí. La segunda usa la
+cota inferior de $\alpha_k$ del paso 2. Este es el **descenso por
+iteración** análogo al $(\alpha - L\alpha^2/2)\|\nabla f\|^2$ del P2-Ej2,
+pero ahora con una constante explícita en $m, M, \sigma, \beta$ que viene
+de la búsqueda de línea.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (c): la desigualdad de Polyak–Łojasiewicz
+
+### Intuición
+
+La desigualdad PL dice que **el cuadrado del gradiente domina el gap de
+valor objetivo**, $\|\nabla f(x)\|^2 \geq 2m\,(f(x) - f^*)$. Geométricamente:
+en una función fuertemente convexa, no podés estar cerca del mínimo y tener
+gradiente chico al mismo tiempo. El gradiente "te denuncia".
+
+<PLInequalityDemo />
+
+Para una cuadrática $f(x) = (m/2)x^2$, vale **igualdad**: $\|\nabla f\|^2 = m^2 x^2 = 2m\cdot (m/2) x^2 = 2m\cdot \text{gap}$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Desarrollo de Taylor de segundo orden con cota inferior">
+Por Taylor con resto y $\nabla^2 f \succeq m\,I$,
+$$
+f(x^*) \;\geq\; f(x) + \langle \nabla f(x), x^* - x\rangle + \tfrac{m}{2}\,\|x^* - x\|^2,
+$$
+o sea
+$$
+f(x) - f(x^*) \;\leq\; \langle \nabla f(x), x - x^*\rangle - \tfrac{m}{2}\,\|x - x^*\|^2.
+$$
+
+<Why>
+Esta desigualdad es la **firma** de la fuerte convexidad: la tangente más
+una cuadrática **acotada por abajo** queda por debajo del gráfico. Es lo
+opuesto del lema de descenso (que mete la cuadrática por arriba). Sale
+del mismo argumento (TFC + Hessiana) cambiando "$\leq M$" por "$\geq m$".
+</Why>
+</Step>
+
+<Step n={2} title="Desigualdad de Young">
+Para todo $a, b \in \mathbb{R}^n$,
+$$
+\langle a, b\rangle \;\leq\; \tfrac{1}{2m}\,\|a\|^2 + \tfrac{m}{2}\,\|b\|^2.
+$$
+
+<Why>
+Se prueba expandiendo $0 \leq \|a/\sqrt{m} - \sqrt{m}\,b\|^2 = \|a\|^2/m - 2\,\langle a, b\rangle + m\,\|b\|^2$
+y dividiendo por 2. Es la versión "ponderada" de Cauchy–Schwarz: vale para
+cualquier $m > 0$. **El truco es elegir el peso $m$ que necesitemos** para
+que cancele el otro término del paso 3.
+</Why>
+</Step>
+
+<Step n={3} title="Combinar con a = ∇f(x), b = x − x*">
+Aplicando Young con $a = \nabla f(x)$, $b = x - x^*$:
+$$
+\langle \nabla f(x), x - x^*\rangle \;\leq\; \tfrac{1}{2m}\,\|\nabla f(x)\|^2 + \tfrac{m}{2}\,\|x - x^*\|^2.
+$$
+
+Sustituyendo en el paso 1:
+$$
+f(x) - f(x^*) \;\leq\; \tfrac{1}{2m}\,\|\nabla f(x)\|^2 + \tfrac{m}{2}\,\|x - x^*\|^2 - \tfrac{m}{2}\,\|x - x^*\|^2 \;=\; \tfrac{1}{2m}\,\|\nabla f(x)\|^2.
+$$
+
+Reordenando: $\|\nabla f(x)\|^2 \geq 2m\,(f(x) - f(x^*))$. $\quad\square$
+
+<Why>
+**El truco crítico es la elección de los pesos en Young.** Si en lugar de
+$m$ hubiésemos usado otro $\lambda$, los términos $\|x - x^*\|^2$ no se
+cancelarían y la cota saldría peor. Eligiendo $\lambda = m$ (el módulo de
+fuerte convexidad) los dos términos cuadráticos se compensan exactamente y
+queda solo $\|\nabla f\|^2$ en la cota.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (d): convergencia lineal
+
+### Intuición
+
+Tenemos dos piezas:
+
+- **(b)**: $f(x_{k+1}) \leq f(x_k) - C\,\|\nabla f(x_k)\|^2$, con $C = 2\beta\sigma(1-\sigma)/M$.
+- **(c)**: $\|\nabla f(x_k)\|^2 \geq 2m\,(f(x_k) - f^*)$.
+
+Combinar las dos da una **recurrencia geométrica** sobre el gap, con factor
+$r = 1 - 4mC = 1 - 4m\beta\sigma(1-\sigma)/M$.
+
+<LinearRateDemo />
+
+Movés los parámetros y comparás con la cota $1/k$ del P2-Ej2 en escala
+log. La diferencia visual es brutal.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Restar f* y combinar (b) con (c)">
+De (b): $f(x_{k+1}) - f(x^*) \leq f(x_k) - f(x^*) - \tfrac{2\beta\sigma(1-\sigma)}{M}\,\|\nabla f(x_k)\|^2$.
+De (c): $-\|\nabla f(x_k)\|^2 \leq -2m\,(f(x_k) - f(x^*))$.
+
+Encadenando:
+$$
+f(x_{k+1}) - f(x^*) \;\leq\; (f(x_k) - f(x^*))\,\Big(1 - \tfrac{4m\beta\sigma(1-\sigma)}{M}\Big).
+$$
+
+<Why>
+**Paso mecánico.** Lo único que hay que cuidar es el sentido de la
+desigualdad: como restamos $\|\nabla f\|^2$ a la derecha, su signo es
+negativo, y al usar (c) que da $\|\nabla f\|^2 \geq \cdots$ (cota inferior),
+$-\|\nabla f\|^2 \leq -\cdots$ (cota superior). Las dos desigualdades van
+en el mismo sentido y se pueden encadenar.
+</Why>
+</Step>
+
+<Step n={2} title="Definir r y observar que r ∈ (0, 1)">
+$$
+r \;=\; 1 - \frac{4m\beta\sigma(1-\sigma)}{M}.
+$$
+
+Como $0 < \sigma(1-\sigma) \leq 1/4$ (máximo en $\sigma = 1/2$) y $m \leq M$,
+$$
+\frac{4m\beta\sigma(1-\sigma)}{M} \leq \frac{4 \cdot M \cdot 1 \cdot 1/4}{M} = 1.
+$$
+
+En sentido estricto $r \in [0, 1)$ siempre que $m, \beta, \sigma \in (0, 1]$
+sean estrictamente positivos. Iterando,
+$$
+f(x_{k+1}) - f(x^*) \;\leq\; r^{k+1}\,(f(x_0) - f(x^*)), \qquad \limsup_k \frac{e_{k+1}}{e_k} \leq r.
+\quad\square
+$$
+
+<Why>
+**Convergencia lineal** con tasa $r$. La constante $r$ depende
+multiplicativamente de cada parámetro: peor condicionamiento (mayor $\kappa = M/m$)
+empeora $r$ (cerca de 1, lento), igual que $\sigma$ extremos (cerca de 0 o
+1) o $\beta$ pequeño (mucho retroceso). El óptimo de $\sigma(1-\sigma)$
+está en $\sigma = 1/2$, por eso un valor de $\sigma$ entre 0.1 y 0.5 es lo
+más usado en la práctica.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Errores típicos
+
+<Warning>
+- **Confundir** la cota cuadrática a lo largo del rayo (parte a) con el
+  lema de descenso de P2-Ej2: son lo mismo, solo que evaluado en una
+  dirección concreta.
+- **Pedir** $\alpha_k = 2\beta(1-\sigma)/M$ exactamente. Es solo una **cota
+  inferior**: el paso elegido por Armijo puede ser estrictamente más grande
+  (mejor para el algoritmo, no peor para la cota).
+- **No usar la elección $\lambda = m$ en Young.** La PL sale exactamente
+  porque el peso de Young es el módulo de fuerte convexidad. Cualquier otro
+  peso da una cota peor o no cierra.
+- **Pensar** que la tasa $r$ es independiente del condicionamiento. En
+  realidad $r = 1 - O(m/M)$: peor condicionamiento ($\kappa$ grande) hace
+  $r$ casi 1, y la convergencia lineal es **lenta**.
+- **Olvidar** que (a) y (b) **no usan fuerte convexidad**. Eso entra recién
+  en (c) para la PL. La separación es importante: (a)–(b) sale solo de
+  $M$-smoothness.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿Por qué la regla de Armijo no usa la constante M de Lipschitz?"
+>
+Justamente esa es la gracia: Armijo es **adaptativa**. No hace falta
+conocer $M$ para implementarla, basta con $\sigma$ y $\beta$ y se evalúa
+$f$ a lo largo del rayo. El análisis de convergencia (parte b) sí usa $M$
+como parámetro teórico que aparece en la cota inferior de $\alpha_k$, pero
+el algoritmo no lo necesita.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="¿Qué valor de σ optimiza la tasa r?"
+>
+$r = 1 - \tfrac{4m\beta\sigma(1-\sigma)}{M}$ se minimiza maximizando
+$\sigma(1-\sigma)$, que es máximo en $\sigma = 1/2$ con valor $1/4$. Ahí
+$r = 1 - m\beta/M$. Esto es **idéntico** (módulo $\beta$) a la mejor tasa
+posible bajo paso fijo óptimo en este setting.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Cuántas iteraciones hacen falta para gap ε bajo convergencia lineal?"
+>
+$f(x_k) - f^* \leq r^k\,(f(x_0) - f^*) \leq \varepsilon$ pide
+$k \geq \log\big((f(x_0) - f^*)/\varepsilon\big)/\log(1/r)$, o sea $k = O(\log(1/\varepsilon))$.
+Compará con $k = O(1/\varepsilon)$ del P2-Ej2: para $\varepsilon = 10^{-6}$,
+una pasa a "docenas o cientos" y la otra a "millones".
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="Si M es muy grande comparado con m, ¿cómo se ve la trayectoria del método?"
+>
+Con $\kappa = M/m \gg 1$, la función tiene curvas de nivel **muy
+elongadas** (cigarro fino). Los gradientes apuntan transversal a las
+curvas, casi perpendicular a la dirección al óptimo, y la trayectoria
+**zigzaguea**. La cota lineal sigue valiendo pero con $r \approx 1 - O(1/\kappa)$,
+muy cerca de 1: convergencia geométrica pero lenta.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Qué pasa si f es solo convexa (m → 0) pero no fuertemente convexa?"
+>
+La PL deja de valer (o vale con constante 0), y por lo tanto $r \to 1$. La
+convergencia lineal degenera. En ese régimen la tasa correcta es la
+sub-lineal $O(1/k)$ del P2-Ej2.
+</ControlQuestion>
+
+<ControlQuestion
+  n={6}
+  question="¿Por qué la constante 2(1−σ)/M aparece en (b)?"
+>
+Es donde la parábola $U(\alpha) = f(x_k) - \alpha\|\nabla f\|^2 + (M/2)\alpha^2\|\nabla f\|^2$
+**cruza** la línea de Armijo $L_\sigma(\alpha) = f(x_k) - \sigma\alpha\|\nabla f\|^2$.
+Más allá de ese cruce, la cota cuadrática ya no garantiza que estemos por
+debajo de la línea, y nuestra prueba pierde el control.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**Hipótesis.** $m\,I \preceq \nabla^2 f \preceq M\,I$, $\kappa = M/m$.
+
+**Cota cuadrática a lo largo del rayo (a).**
+$$
+f(x_k - \alpha\nabla f(x_k)) \leq f(x_k) - \alpha\|\nabla f(x_k)\|^2 + \tfrac{M}{2}\alpha^2\|\nabla f(x_k)\|^2.
+$$
+**No usa fuerte convexidad.**
+
+**Garantía de Armijo (b).** Se cumple para $\alpha \leq 2(1-\sigma)/M$.
+Por backtracking, $\alpha_k \geq 2\beta(1-\sigma)/M$ y
+$$
+f(x_{k+1}) \leq f(x_k) - \tfrac{2\beta\sigma(1-\sigma)}{M}\|\nabla f(x_k)\|^2.
+$$
+
+**PL desde fuerte convexidad (c).**
+$$
+\|\nabla f(x)\|^2 \geq 2m\,(f(x) - f^*).
+$$
+Salida: Taylor + Young con peso exactamente $m$.
+
+**Tasa lineal (d).** $f(x_{k+1}) - f^* \leq r\,(f(x_k) - f^*)$ con
+$$
+r = 1 - \frac{4m\beta\sigma(1-\sigma)}{M}.
+$$
+
+**Trucos clave.**
+- (a)–(b) salen solo de $M$-smoothness (sin fuerte convexidad).
+- En Young, **el peso $m$** hace cancelar $\|x - x^*\|^2$.
+- $r$ óptimo en $\sigma = 1/2$: $r = 1 - m\beta/M$.
+- Iteraciones para gap $\varepsilon$: $O(\log(1/\varepsilon))$ vs $O(1/\varepsilon)$ sin fuerte convexidad.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p2-ej3" />

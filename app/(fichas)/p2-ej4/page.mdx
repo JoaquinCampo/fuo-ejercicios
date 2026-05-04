@@ -1,0 +1,450 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { MomentumTrajectoryDemo } from "./_components/MomentumTrajectoryDemo";
+import { ScalarRecurrenceDemo } from "./_components/ScalarRecurrenceDemo";
+import { CharacteristicRootsDemo } from "./_components/CharacteristicRootsDemo";
+
+export const metadata = {
+  title: "P2-Ej4: Heavy Ball y Nesterov como sistema de orden 2",
+  description:
+    "Métodos con momentum reescritos como sistemas de primer orden y como discretización de una EDO de orden 2; análisis cuadrático y caso escalar.",
+};
+
+<FichaHeader
+  practico={2}
+  ejercicio={4}
+  title="Heavy Ball y Nesterov como sistema de orden 2"
+  estimated_minutes={75}
+/>
+
+## Motivación
+
+Steepest descent puro mira el presente: usa solo $\nabla f(x_k)$. Los
+**métodos con momentum** mezclan información del paso anterior. La forma
+clásica es Heavy Ball:
+
+$$
+x_{k+1} \;=\; x_k - \alpha\,\nabla f(x_k) + \beta\,(x_k - x_{k-1}),
+$$
+
+y la variante de Nesterov agrega una **extrapolación**:
+
+$$
+y_k = x_k + \beta\,(x_k - x_{k-1}), \qquad x_{k+1} = y_k - \alpha\,\nabla f(y_k).
+$$
+
+Ambos pueden leerse como **discretizaciones de una EDO de orden dos**:
+una bola pesada bajando por el potencial $f$, sujeta a fricción. El
+parámetro $\beta$ codifica la **inercia**: $\beta = 0$ recupera GD,
+$\beta \to 1$ es la bola sin fricción que oscila indefinidamente.
+
+El ejercicio pide:
+
+1. Reescribir HB y Nesterov como sistemas de **primer orden** en
+   $(x_k, v_k)$, con $v_k = x_k - x_{k-1}$.
+2. Identificar la EDO continua de la que son discretizaciones.
+3. Analizar el caso cuadrático (en particular escalar) para entender la
+   recurrencia lineal de orden 2.
+
+<MomentumTrajectoryDemo />
+
+Movés $\alpha$ y $\beta$ y ves cómo cambia la trayectoria. GD oscila
+transversal en una cuadrática mal condicionada; HB y Nesterov amortiguan
+esas oscilaciones gracias al momentum.
+
+## Definiciones y herramientas
+
+<Definition title="Heavy Ball (Polyak, 1964)">
+$$
+x_{k+1} \;=\; x_k - \alpha\,\nabla f(x_k) + \beta\,(x_k - x_{k-1}), \qquad \alpha > 0,\; \beta \in [0, 1).
+$$
+
+Conviven dos términos: el **gradiente** y la **inercia** $\beta\,(x_k - x_{k-1})$.
+Si $\beta = 0$ se recupera GD.
+</Definition>
+
+<Definition title="Nesterov (acelerado)">
+$$
+y_k \;=\; x_k + \beta\,(x_k - x_{k-1}), \qquad x_{k+1} \;=\; y_k - \alpha\,\nabla f(y_k).
+$$
+
+La diferencia con HB es que el gradiente se evalúa **en el punto extrapolado**
+$y_k$, no en $x_k$. Es un look-ahead: "veo dónde va a estar la inercia y
+corrijo el rumbo desde ahí".
+</Definition>
+
+## Enunciado
+
+- **(1a)** Definir $v_k = x_k - x_{k-1}$ y reescribir Heavy Ball como un
+  sistema en $(x_k, v_k)$.
+- **(1b)** Mostrar $v_{k+1} = \beta\,v_k - \alpha\,\nabla f(x_k)$.
+- **(1c)** Interpretar como discretización de una EDO de orden 2; rol de $\beta$.
+- **(2a)** Reescribir Nesterov en términos de $v_k$.
+- **(2b)** Comparar con Heavy Ball.
+- **(2c)** Discutir cómo evaluar $\nabla f$ en $y_k$ afecta la estabilidad.
+- **(3a)** Para $f(x) = \tfrac12 x^{\top}Q x$ con $Q \succ 0$, escribir Heavy Ball.
+- **(3b)** Sea $e^k = x_k - x^*$. Mostrar que satisface una recurrencia lineal
+  de orden 2.
+- **(3c)** Caso escalar $f(x) = \tfrac{\lambda}{2}x^2$: escribir explícitamente.
+- **(3d)** $\beta = 0$: ¿qué método se obtiene?
+
+---
+
+## Parte (1): Heavy Ball como sistema de primer orden
+
+### Intuición
+
+Una recurrencia que mira **dos pasos atrás** ($x_k$ y $x_{k-1}$) se puede
+"aplanar" introduciendo una variable nueva $v_k$ que recuerda la diferencia
+reciente, y entonces la recurrencia pasa a ser de **un solo paso** en
+$(x, v)$. Es la misma trampa que pasa una EDO de orden 2 a un sistema de
+orden 1 en $(\text{posición}, \text{velocidad})$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Definir v_k = x_k − x_{k-1}">
+La recurrencia HB es
+$$
+x_{k+1} \;=\; x_k - \alpha\,\nabla f(x_k) + \beta\,v_k.
+$$
+
+<Why>
+$v_k$ es una **velocidad discreta**: lo que se movió la sucesión en el
+paso $k-1 \to k$. Pensar la recurrencia como "$x_{k+1} = x_k +$ algo" hace
+explícito que ese algo, llamémoslo $v_{k+1}$, es la nueva velocidad.
+</Why>
+</Step>
+
+<Step n={2} title="Sistema (x, v)">
+Definimos $v_{k+1} = x_{k+1} - x_k$. De la recurrencia HB:
+$$
+v_{k+1} \;=\; (x_k - \alpha\,\nabla f(x_k) + \beta\,v_k) - x_k \;=\; \beta\,v_k - \alpha\,\nabla f(x_k).
+$$
+
+El sistema queda
+$$
+\begin{cases}
+x_{k+1} = x_k + v_{k+1}, \\
+v_{k+1} = \beta\,v_k - \alpha\,\nabla f(x_k).
+\end{cases}
+$$
+
+<Why>
+Lo que era una recurrencia de orden 2 (mira $x_k$ y $x_{k-1}$) ahora es de
+orden 1 en estado ampliado $(x_k, v_k)$. Esto **no cambia nada del
+algoritmo**: solo es una reescritura. Es útil porque el sistema de orden 1
+es más fácil de analizar (autovalores, estabilidad, comparación con EDOs).
+</Why>
+</Step>
+
+<Step n={3} title="Discretización de una EDO de orden 2">
+Pensando $v_k \approx \dot x(t_k)$ con $\Delta t = 1$, la actualización
+$v_{k+1} - v_k = (\beta - 1)\,v_k - \alpha\,\nabla f(x_k)$ se lee como
+$$
+\ddot x \;\approx\; -(1 - \beta)\,\dot x - \alpha\,\nabla f(x).
+$$
+
+Es una bola pesada en el potencial $f$ con fricción $1 - \beta$.
+
+<Why>
+El término $-(1-\beta)\dot x$ es **fricción viscosa**: $\beta$ cerca de 1
+es fricción casi nula (la bola sigue rodando), $\beta = 0$ es fricción
+máxima (sin memoria, GD puro). La masa efectiva es la unidad y la fuerza
+es $-\alpha\,\nabla f$. Esta lectura física sugiere las intuiciones:
+con poca fricción la trayectoria oscila y "esquiva" cañones de la cuadrática
+mal condicionada; con mucha fricción es lenta como GD.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (2): Nesterov
+
+### Intuición
+
+La diferencia con HB no es la fórmula del momentum sino **dónde se mira el
+gradiente**: en HB se evalúa en el punto actual $x_k$; en Nesterov se
+evalúa en el **punto extrapolado** $y_k = x_k + \beta\,(x_k - x_{k-1})$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Reescribir con v_k">
+Con $v_k = x_k - x_{k-1}$:
+$$
+y_k \;=\; x_k + \beta\,v_k, \qquad x_{k+1} \;=\; y_k - \alpha\,\nabla f(y_k) \;=\; x_k + \beta\,v_k - \alpha\,\nabla f(y_k).
+$$
+
+Entonces $v_{k+1} = x_{k+1} - x_k = \beta\,v_k - \alpha\,\nabla f(y_k)$.
+
+<Why>
+Casi idéntico a HB: la única diferencia es **el argumento del gradiente**,
+que pasa de $x_k$ a $y_k = x_k + \beta v_k$. En el sistema $(x, v)$ esto
+se ve como un look-ahead: el gradiente "anticipa" un paso de inercia antes
+de actuar.
+</Why>
+</Step>
+
+<Step n={2} title="Comparar con Heavy Ball">
+$$
+\begin{aligned}
+\text{HB:}\quad & v_{k+1} = \beta\,v_k - \alpha\,\nabla f(x_k), \\
+\text{Nesterov:}\quad & v_{k+1} = \beta\,v_k - \alpha\,\nabla f(x_k + \beta\,v_k).
+\end{aligned}
+$$
+
+<Why>
+Cuando $f$ es cuadrática $\nabla f$ es lineal, así que
+$\nabla f(x + \beta v) = \nabla f(x) + \beta\,\nabla^2 f \cdot v$. La
+diferencia entre HB y Nesterov es entonces un término extra
+$-\alpha\beta\,\nabla^2 f \cdot v$ en Nesterov: una **corrección
+proporcional a la velocidad** que actúa como amortiguamiento adicional.
+Eso suele dar a Nesterov mejor comportamiento de estabilidad.
+</Why>
+</Step>
+
+<Step n={3} title="Estabilidad del look-ahead">
+Si $v_k$ apunta hacia una zona de **mucha pendiente**, evaluar $\nabla f$
+ahí (en $y_k$) en lugar de en $x_k$ corrige antes de impactar. En HB esa
+corrección llega un paso tarde y por eso HB puede oscilar (o divergir) en
+regímenes en los que Nesterov es estable.
+
+<Why>
+Heurísticamente, Nesterov "ve venir" la curvatura: el gradiente le avisa
+cuando la inercia lo está llevando hacia una pared. HB ciegamente acumula
+inercia hasta que el gradiente lo frena un paso después. La cuenta concreta
+del paso 2 lo formaliza: Nesterov tiene un término extra en
+$\nabla^2 f \cdot v$ que penaliza velocidad alta en direcciones de alta
+curvatura. Para más detalle ver P2-Ej1 (comparación numérica).
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (3): caso cuadrático
+
+### Intuición
+
+Para $f(x) = \tfrac12 x^{\top}Qx$, $\nabla f(x) = Qx$, así que la recurrencia
+es **lineal** y se puede escribir como una matriz por el vector estado
+$(x_k, v_k)$.
+
+<ScalarRecurrenceDemo />
+
+En el caso escalar, la recurrencia es de orden 2 con polinomio característico
+de grado 2. Las dos raíces controlan todo: si son reales positivas, decaimiento
+monótono; si son complejas, oscilación amortiguada.
+
+<CharacteristicRootsDemo />
+
+Las raíces viven en el círculo complejo de radio $\sqrt{\beta}$ cuando son
+complejas (porque su producto es $\beta$). Estabilidad pide que ambas estén
+**dentro** del círculo unidad.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="(3a) Heavy Ball para f(x) = ½ xᵀQx">
+$\nabla f(x) = Qx$, así que
+$$
+x_{k+1} \;=\; x_k - \alpha\,Q\,x_k + \beta\,(x_k - x_{k-1}) \;=\; (I - \alpha Q + \beta I)\,x_k - \beta\,x_{k-1}.
+$$
+
+<Why>
+La recurrencia es **lineal** en $x$. Eso permite escribirla como una
+operación matriz por vector estado y analizarla con álgebra lineal.
+</Why>
+</Step>
+
+<Step n={2} title="(3b) Recurrencia lineal de orden 2 para el error">
+Como $x^*$ minimiza $f$ y $Qx^* = 0$, **el error $e^k = x_k - x^*$ satisface
+la misma recurrencia que $x_k$**:
+$$
+e^{k+1} \;=\; (I - \alpha Q + \beta I)\,e^k - \beta\,e^{k-1}.
+$$
+
+Diagonalizando $Q = U\Lambda U^{\top}$ con $\Lambda = \mathrm{diag}(\lambda_i)$,
+y proyectando $e^k$ en la base de autovectores ($\tilde e^k_i = u_i^{\top} e^k$),
+$$
+\tilde e^{k+1}_i \;=\; (1 - \alpha\,\lambda_i + \beta)\,\tilde e^k_i - \beta\,\tilde e^{k-1}_i.
+$$
+
+<Why>
+**Cada modo $\tilde e_i$ evoluciona independientemente** con la recurrencia
+escalar correspondiente al autovalor $\lambda_i$. El sistema acoplado se
+desacopla en $n$ recurrencias escalares; basta analizar el caso escalar
+(parte 3c) y aplicarlo a cada autovalor.
+</Why>
+</Step>
+
+<Step n={3} title="(3c) Caso escalar f(x) = (λ/2)x²">
+Sustituyendo $\lambda_i = \lambda$ en el paso 2:
+$$
+x_{k+1} \;=\; (1 - \alpha\,\lambda + \beta)\,x_k - \beta\,x_{k-1}.
+$$
+
+Polinomio característico:
+$$
+r^2 - (1 - \alpha\,\lambda + \beta)\,r + \beta \;=\; 0,
+\qquad r_{\pm} = \frac{(1 - \alpha\lambda + \beta) \pm \sqrt{(1 - \alpha\lambda + \beta)^2 - 4\beta}}{2}.
+$$
+
+<Why>
+Es la teoría estándar de recurrencias lineales de orden 2: la solución
+general es $x_k = A\,r_+^k + B\,r_-^k$ (raíces distintas) o
+$x_k = (A + B k)\,r^k$ (raíz doble). Las constantes $A, B$ se ajustan a
+las condiciones iniciales $x_0, x_1$. **Estabilidad** equivale a
+$\max(|r_+|, |r_-|) < 1$, es decir, ambas raíces dentro del círculo unidad.
+</Why>
+</Step>
+
+<Step n={4} title="(3d) Caso β = 0">
+$$
+r^2 - (1 - \alpha\lambda)\,r \;=\; 0 \;\Rightarrow\; r = 0 \text{ o } r = 1 - \alpha\lambda.
+$$
+
+La solución es $x_k = (1 - \alpha\lambda)^k\,x_0$: **steepest descent puro**.
+
+<Why>
+Sin momentum no hay memoria del paso anterior; la recurrencia colapsa a
+orden 1. La raíz $r = 0$ no contribuye (queda absorbida por la condición
+inicial $v_0 = 0$). Confirmamos: $\beta = 0 \Rightarrow$ GD.
+</Why>
+</Step>
+</Proof>
+
+### Análisis de raíces
+
+<Example title="Cuándo las raíces son complejas (oscilación)">
+El discriminante $(1 - \alpha\lambda + \beta)^2 - 4\beta < 0$ vale cuando
+$$
+|1 - \alpha\lambda + \beta| < 2\sqrt{\beta}.
+$$
+
+En ese caso las raíces son complejas conjugadas con módulo $\sqrt{\beta}$ y
+la trayectoria oscila con tasa de decaimiento $\sqrt{\beta}$. **Cuanto más
+chico $\beta$, más rápido decae la oscilación pero menos momentum aporta.**
+
+El "punto óptimo" para una cuadrática con autovalores $m \leq \lambda \leq M$
+es $\beta^* = (\sqrt{M} - \sqrt{m})^2/(\sqrt{M} + \sqrt{m})^2$, que da tasa
+por iteración $(\sqrt{\kappa} - 1)/(\sqrt{\kappa} + 1)$ (vs $(\kappa - 1)/(\kappa + 1)$
+de GD): $O(\sqrt{\kappa})$ en lugar de $O(\kappa)$ iteraciones para alcanzar
+precisión fija, una mejora de factor $\sqrt{\kappa}$.
+</Example>
+
+---
+
+## Errores típicos
+
+<Warning>
+- **Confundir HB con Nesterov**: la única diferencia algorítmica es el
+  argumento del gradiente ($x_k$ vs $y_k$). En cuadráticas se traduce en
+  un término extra $\nabla^2 f \cdot v$.
+- **Pedir $\beta \in [0, 1]$ con extremo cerrado** en 1: la cota de
+  estabilidad pide $\beta < 1$ estricto. Con $\beta = 1$ las raíces tienen
+  módulo 1 y la sucesión no se atenúa.
+- **Olvidar que el análisis modal solo aplica a cuadráticas**. Para $f$
+  general no lineal, la diagonalización modal no se sostiene globalmente y
+  hay que pasar al lenguaje de Lyapunov o lema de descenso (P2-Ej2/3).
+- **Pensar que momentum siempre acelera**: con $\alpha$ y $\beta$ mal
+  elegidos puede divergir. La elección óptima depende de la curvatura
+  ($\lambda_{\min}, \lambda_{\max}$).
+- **Tomar la EDO continua como exacta**. La discretización con $\Delta t = 1$
+  introduce errores que pueden ser dominantes; la analogía continua sirve
+  para intuición, no como prueba.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿Cuál es la EDO continua asociada a Heavy Ball?"
+>
+$\ddot x + (1 - \beta)\,\dot x + \alpha\,\nabla f(x) = 0$, una bola con
+masa unidad en el potencial $f$ y fricción viscosa $1 - \beta$. Tomando
+$\beta \to 1$ se llega al caso sin fricción.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="Para una cuadrática escalar con λ = 1, ¿qué relación entre α y β garantiza estabilidad?"
+>
+Las raíces tienen producto $\beta$, así que están dentro del círculo
+unidad si $\beta < 1$. Además, hace falta que el otro coeficiente
+$1 - \alpha + \beta$ permita raíces reales pequeñas o complejas dentro
+del círculo: en general, $0 < \alpha < 2(1+\beta)$ y $\beta < 1$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Cuál es la diferencia entre HB y Nesterov para f cuadrática?"
+>
+Linealizando, Nesterov agrega un término extra
+$-\alpha\beta\,\nabla^2 f \cdot v$ a la recurrencia de HB. Es un
+amortiguamiento proporcional a la velocidad y a la curvatura local, lo que
+suele estabilizar mejor en regímenes de momentum alto.
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="¿Por qué proyectar el error en la base de autovectores de Q desacopla la dinámica?"
+>
+Porque $Q$ es simétrica positiva definida y diagonalizable. En la base de
+autovectores la recurrencia se vuelve diagonal: cada componente $\tilde e_i$
+evoluciona independiente con la recurrencia escalar correspondiente a $\lambda_i$.
+El estudio del caso escalar abarca todo el caso cuadrático.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Cuándo las raíces son reales y cuándo complejas?"
+>
+Reales si el discriminante $(1 - \alpha\lambda + \beta)^2 - 4\beta \geq 0$,
+complejas en otro caso. En el régimen complejo, ambas tienen módulo
+$\sqrt{\beta}$ y la trayectoria oscila con decaimiento $\sqrt{\beta}^k$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={6}
+  question="¿Por qué Nesterov suele ser preferido en la práctica?"
+>
+Por la corrección "look-ahead": evaluar el gradiente en $y_k$ corrige
+antes de chocar con curvatura. En el peor caso (cuadráticas) Nesterov
+alcanza la tasa $1 - O(1/\sqrt{\kappa})$, óptima entre métodos de primer
+orden de información ($O(\sqrt{\kappa})$ iteraciones), mientras que GD
+estándar pide $O(\kappa)$.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**HB.** $x_{k+1} = x_k - \alpha\,\nabla f(x_k) + \beta\,(x_k - x_{k-1})$.
+Equivalente: $v_{k+1} = \beta\,v_k - \alpha\,\nabla f(x_k)$, $x_{k+1} = x_k + v_{k+1}$.
+
+**Nesterov.** $y_k = x_k + \beta\,v_k$, $x_{k+1} = y_k - \alpha\,\nabla f(y_k)$.
+Diferencia con HB: gradiente en $y_k$ (look-ahead).
+
+**EDO continua.** $\ddot x + (1 - \beta)\,\dot x + \alpha\,\nabla f(x) = 0$.
+
+**Caso cuadrático escalar.**
+$$
+x_{k+1} = (1 - \alpha\lambda + \beta)\,x_k - \beta\,x_{k-1}.
+$$
+Polinomio: $r^2 - (1 - \alpha\lambda + \beta)\,r + \beta = 0$. Producto de raíces $= \beta$.
+
+**Estabilidad.** $|r_\pm| < 1$. Régimen complejo (disc &lt; 0): ambas raíces tienen módulo $\sqrt{\beta}$, oscilación amortiguada con tasa $\sqrt{\beta}$.
+
+**Tasas óptimas (Nesterov).** Para $\kappa = M/m$ grande: $1 - O(1/\sqrt{\kappa})$ por iteración, vs $1 - O(1/\kappa)$ de GD. Aceleración de $\kappa$ a $\sqrt{\kappa}$ iteraciones.
+
+**β = 0** recupera GD; **β → 1** es bola sin fricción (no converge).
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p2-ej4" />

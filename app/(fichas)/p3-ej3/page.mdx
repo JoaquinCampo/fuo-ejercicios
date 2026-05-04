@@ -1,0 +1,591 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { NonExpansiveProjectionDemo } from "./_components/NonExpansiveProjectionDemo";
+import { ContractionFactorDemo } from "./_components/ContractionFactorDemo";
+import { PGTrajectoryDemo } from "./_components/PGTrajectoryDemo";
+
+export const metadata = {
+  title: "P3-Ej3: Orden de convergencia de gradiente proyectado para cuadráticas",
+  description:
+    "Análisis de convergencia del método de gradiente proyectado sobre cuadráticas estrictamente convexas: no expansividad de la proyección, factor de contracción y paso óptimo.",
+};
+
+<FichaHeader
+  practico={3}
+  ejercicio={3}
+  title="Orden de convergencia de gradiente proyectado para cuadráticas"
+  estimated_minutes={90}
+/>
+
+## Motivación
+
+El **gradiente proyectado** es la versión más sencilla de un método para
+optimización con restricciones convexas: hacés un paso de gradiente como
+si no hubiera restricción y, si te saliste del conjunto factible
+$\mathcal{X}$, te volvés a empujar adentro proyectando:
+
+$$
+x^{k+1} \;=\; P_{\mathcal{X}}\big(x^k - s\,\nabla f(x^k)\big).
+$$
+
+Para una cuadrática $f(x) = \tfrac12 x^{\top}Q\,x - b^{\top}x$ con
+$Q \succ 0$ y $\mathcal{X}$ convexo cerrado, este ejercicio demuestra que
+el método **converge linealmente** y caracteriza la **tasa óptima** de
+convergencia. La idea estructural es la misma que en steepest descent
+sin restricciones (P2-Ej3), pero acá la **proyección** entra en escena.
+
+<NonExpansiveProjectionDemo />
+
+La pieza clave es que la proyección $P_{\mathcal{X}}$ sobre un convexo
+cerrado es **no expansiva**: nunca aumenta distancias. Sin esa propiedad,
+proyectar podría empeorar el progreso del paso de gradiente; con ella,
+podemos arrastrar todo el análisis sin restricciones al caso restringido
+casi sin pérdida.
+
+## Definiciones y herramientas
+
+<Definition title="Proyección sobre un convexo cerrado">
+Para $\mathcal{X} \subset \mathbb{R}^n$ convexo cerrado no vacío y
+$z \in \mathbb{R}^n$,
+$$
+P_{\mathcal{X}}(z) \;=\; \arg\min_{x \in \mathcal{X}} \|x - z\|.
+$$
+Existe y es único. Se caracteriza por la desigualdad variacional
+$$
+\langle z - P_{\mathcal{X}}(z),\; x - P_{\mathcal{X}}(z)\rangle \;\leq\; 0
+\qquad \forall x \in \mathcal{X}.
+$$
+</Definition>
+
+<Definition title="Gradiente proyectado">
+$$
+x^{k+1} \;=\; P_{\mathcal{X}}\big(x^k - s\,\nabla f(x^k)\big), \qquad s > 0.
+$$
+Punto fijo: $x \in \mathcal{X}$ es óptimo $\Leftrightarrow x = P_{\mathcal{X}}(x - s\,\nabla f(x))$
+para todo $s > 0$.
+</Definition>
+
+<Definition title="No expansividad">
+$P_{\mathcal{X}}$ es **no expansiva**:
+$$
+\|P_{\mathcal{X}}(x) - P_{\mathcal{X}}(y)\| \;\leq\; \|x - y\| \qquad \forall x, y.
+$$
+</Definition>
+
+## Enunciado
+
+Sea $\mathcal{X} \subset \mathbb{R}^n$ convexo cerrado no vacío y
+$f(x) = \tfrac12 x^{\top}Q\,x - b^{\top}x$ con $Q \in S^n_{++}$.
+Notamos $x^*$ al único minimizador de $f$ sobre $\mathcal{X}$. Tomamos
+$\alpha^k = 1$ y $s^k = s > 0$ fijo.
+
+- **(a)** Probar $\nabla f(x) = Qx - b$ y que $P_{\mathcal{X}}$ es no expansiva.
+- **(b)** Mostrar $\|x^{k+1} - x^*\| \leq \|(I - sQ)(x^k - x^*)\|$.
+- **(c)** Si $\lambda$ es autovalor de $Q$, $1 - s\lambda$ es autovalor de
+  $I - sQ$. Si $m, M$ son el menor y mayor autovalor de $Q$,
+  $$
+  \|x^{k+1} - x^*\| \leq \max(|1 - sm|, |1 - sM|)\,\|x^k - x^*\|.
+  $$
+- **(d)** Determinar el intervalo de $s$ que asegura convergencia.
+- **(e)** Hallar $s^*$ que minimiza el factor de contracción y la tasa óptima.
+
+---
+
+## Parte (a): no expansividad de la proyección
+
+### Intuición
+
+La idea geométrica: la proyección sobre un convexo "achata" la geometría
+del espacio hacia el conjunto. Dos puntos lejanos pueden caer en
+proyecciones cercanas, pero **nunca al revés**. La prueba combina la
+caracterización variacional de la proyección con Cauchy-Schwarz.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="∇f para la cuadrática">
+$f(x) = \tfrac12 x^{\top}Q\,x - b^{\top}x$. Diferenciando:
+$$
+\nabla f(x) \;=\; \tfrac12 (Q + Q^{\top})\,x - b \;=\; Q\,x - b
+$$
+porque $Q$ es simétrica.
+
+<Why>
+La derivada de $\tfrac12 x^{\top}A\,x$ es $\tfrac12(A + A^{\top})x$ en
+general; con $A = Q$ simétrica se simplifica a $Qx$. La parte lineal
+$-b^{\top}x$ contribuye $-b$.
+</Why>
+</Step>
+
+<Step n={2} title="Caracterización variacional aplicada a x e y">
+Llamemos $u = P_{\mathcal{X}}(x)$, $v = P_{\mathcal{X}}(y)$. Por la
+desigualdad variacional con $z = x$ y la elección $\bar x = v \in \mathcal{X}$:
+$$
+\langle x - u,\; v - u \rangle \;\leq\; 0.
+$$
+Análogamente con $z = y$ y $\bar x = u \in \mathcal{X}$:
+$$
+\langle y - v,\; u - v \rangle \;\leq\; 0.
+$$
+
+<Why>
+La desigualdad variacional dice que el ángulo entre el vector "del
+proyectado al original" $z - P(z)$ y cualquier dirección hacia un punto
+del conjunto es **obtuso o recto**. Tomamos como ese punto del conjunto,
+respectivamente, la otra proyección.
+</Why>
+</Step>
+
+<Step n={3} title="Sumar las dos desigualdades">
+Sumando las dos inecuaciones:
+$$
+\langle x - u,\; v - u \rangle + \langle y - v,\; u - v \rangle \;\leq\; 0.
+$$
+
+Notar que $u - v = -(v - u)$, así que reordenamos el segundo término:
+$\langle y - v,\; u - v\rangle = -\langle y - v,\; v - u\rangle$. Sumando:
+$$
+\langle (x - u) - (y - v),\; v - u \rangle \;\leq\; 0,
+$$
+es decir,
+$$
+\langle (x - y) - (u - v),\; v - u \rangle \;\leq\; 0.
+$$
+
+Multiplicando por $-1$:
+$$
+\langle (x - y) - (u - v),\; u - v \rangle \;\geq\; 0.
+$$
+
+<Why>
+Sumar para combinar las dos restricciones, una desde $x$ y otra desde $y$,
+es el truco estándar. Reordenamos para tener $u - v$ aislado, y vamos a
+desarmar el producto interno en dos términos.
+</Why>
+</Step>
+
+<Step n={4} title="Desarrollar y aplicar Cauchy-Schwarz">
+Distribuyendo:
+$$
+\langle x - y,\; u - v\rangle - \|u - v\|^2 \;\geq\; 0,
+$$
+es decir,
+$$
+\|u - v\|^2 \;\leq\; \langle x - y,\; u - v\rangle \;\leq\; \|x - y\|\;\|u - v\|.
+$$
+La última desigualdad es Cauchy-Schwarz. Si $\|u - v\| > 0$, dividimos:
+$$
+\|u - v\| \;\leq\; \|x - y\|, \qquad \text{i.e. } \|P_{\mathcal{X}}(x) - P_{\mathcal{X}}(y)\| \leq \|x - y\|.
+$$
+Si $\|u - v\| = 0$ la conclusión es trivial.
+
+<Why>
+El paso clave: $\|u - v\|^2 \leq \langle x - y, u - v\rangle$ es una
+**desigualdad de "co-coercividad"** que sale de la convexidad del conjunto.
+Cauchy-Schwarz la convierte en una cota de norma. Esta misma estructura
+aparece en muchos teoremas de operadores monótonos (la proyección es un
+caso particular de operador firmemente no expansivo, propiedad más fuerte
+que solo no-expansividad).
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (b): contracción del paso de gradiente proyectado
+
+### Intuición
+
+El óptimo $x^*$ es **punto fijo** del operador
+$T(x) = P_{\mathcal{X}}(x - s\,\nabla f(x))$. Si comparamos el iterado $x^{k+1} = T(x^k)$
+con $x^* = T(x^*)$, la no expansividad nos da $\|T(x^k) - T(x^*)\| \leq \|(x^k - s\nabla f(x^k)) - (x^* - s\nabla f(x^*))\|$.
+Y como $f$ es cuadrática, $\nabla f(x) - \nabla f(x^*) = Q(x - x^*)$, así
+que esa cota se vuelve **lineal** en $x^k - x^*$, con matriz de paso $I - sQ$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="x* es punto fijo del paso proyectado">
+La condición de optimalidad de primer orden para minimizar $f$ sobre
+$\mathcal{X}$ es
+$\langle \nabla f(x^*),\; x - x^*\rangle \geq 0$ para todo $x \in \mathcal{X}$.
+Eso es equivalente (multiplicando por $s > 0$ y reescribiendo) a:
+$$
+x^* \;=\; P_{\mathcal{X}}\big(x^* - s\,\nabla f(x^*)\big).
+$$
+
+<Why>
+La condición $x^* = P_{\mathcal{X}}(x^* - s\nabla f(x^*))$ es la
+**caracterización de punto crítico** para problemas con restricciones
+convexas. En el caso interior reduce a $\nabla f(x^*) = 0$ (Fermat); en
+el caso de borde activo, dice que el gradiente apunta hacia afuera del
+conjunto. Como $f$ es estrictamente convexa, este punto fijo es único.
+</Why>
+</Step>
+
+<Step n={2} title="Aplicar no expansividad">
+Como $x^{k+1} = P_{\mathcal{X}}(x^k - s\,\nabla f(x^k))$ y $x^* = P_{\mathcal{X}}(x^* - s\,\nabla f(x^*))$:
+$$
+\|x^{k+1} - x^*\| \;\leq\; \big\|(x^k - s\,\nabla f(x^k)) - (x^* - s\,\nabla f(x^*))\big\|.
+$$
+
+<Why>
+Es directo: $T = P_{\mathcal{X}} \circ (I - s\nabla f)$ no expande
+porque $P_{\mathcal{X}}$ no expande. Toda la complicación de la
+proyección desaparece: nos quedamos con la diferencia de los **argumentos**
+de la proyección.
+</Why>
+</Step>
+
+<Step n={3} title="Usar que f es cuadrática">
+$\nabla f(x) = Qx - b$, así que
+$\nabla f(x^k) - \nabla f(x^*) = Q(x^k - x^*)$. Sustituyendo:
+$$
+(x^k - s\,\nabla f(x^k)) - (x^* - s\,\nabla f(x^*)) \;=\; (x^k - x^*) - s\,Q(x^k - x^*) \;=\; (I - sQ)(x^k - x^*).
+$$
+
+Por lo tanto:
+$$
+\|x^{k+1} - x^*\| \;\leq\; \big\|(I - sQ)(x^k - x^*)\big\|.
+$$
+
+<Why>
+Acá usamos que $f$ es cuadrática **en serio**: para $f$ general, el
+incremento del gradiente está acotado por $L\|x - y\|$ pero no es
+exactamente $L(x - y)$. La cuadraticidad permite **álgebra lineal exacta**:
+la recurrencia se vuelve $(I - sQ)$ por el error.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (c): la tasa de contracción es $\rho(s)$
+
+### Intuición
+
+$I - sQ$ es simétrica (porque $Q$ lo es), así que su norma espectral es
+el máximo del módulo de sus autovalores. Cada autovalor de $I - sQ$ es
+$1 - s\lambda$ con $\lambda$ autovalor de $Q$. Como $Q$ tiene autovalores
+en $[m, M]$, los autovalores de $I - sQ$ están en $[1 - sM,\, 1 - sm]$,
+y su máximo módulo es $\max(|1 - sm|, |1 - sM|)$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Autovalores de I − sQ">
+Si $Q\,v = \lambda v$, entonces $(I - sQ)v = v - s\lambda v = (1 - s\lambda)v$.
+Es decir, $1 - s\lambda$ es autovalor de $I - sQ$ asociado al mismo
+autovector. Todos los autovalores de $I - sQ$ son de esta forma.
+
+<Why>
+Es una propiedad estándar: $p(Q)$ tiene como autovalores $p(\lambda)$
+para $p$ polinomio. Acá $p(t) = 1 - st$.
+</Why>
+</Step>
+
+<Step n={2} title="Norma espectral de I − sQ">
+$Q$ es simétrica, así que $I - sQ$ también. Para matrices simétricas, la
+norma espectral es el módulo del autovalor más grande:
+$$
+\|I - sQ\|_2 \;=\; \max_{\lambda \in \sigma(Q)} |1 - s\lambda| \;=\; \max(|1 - sm|, |1 - sM|).
+$$
+La igualdad final es porque $|1 - s\lambda|$ es función a tramos lineal y
+convexa de $\lambda$, así que su máximo en $[m, M]$ se alcanza en uno
+de los extremos.
+
+<Why>
+La función $\lambda \mapsto |1 - s\lambda|$ es V-forma con vértice en
+$\lambda = 1/s$. Su máximo sobre un intervalo se alcanza en uno de los
+extremos (es convexa). En $[m, M]$, los candidatos son $|1 - sm|$ y
+$|1 - sM|$, y gana el más grande.
+</Why>
+</Step>
+
+<Step n={3} title="Aplicar a la cota de la parte (b)">
+Para cualquier vector $v$, $\|(I - sQ)v\| \leq \|I - sQ\|_2\,\|v\|$. Con
+$v = x^k - x^*$:
+$$
+\|x^{k+1} - x^*\| \;\leq\; \max(|1 - sm|, |1 - sM|)\,\|x^k - x^*\|.
+$$
+
+Iterando:
+$$
+\|x^{k} - x^*\| \;\leq\; \rho(s)^{k}\,\|x^0 - x^*\|, \qquad \rho(s) = \max(|1 - sm|, |1 - sM|).
+$$
+
+<Why>
+Una recurrencia geométrica. Si $\rho(s) < 1$, hay convergencia **lineal**.
+Esa es la misma tasa que en GD sin restricciones (P2-Ej3): la proyección
+no empeora la convergencia gracias a la no expansividad. Es un hecho
+fuerte: agregar restricciones convexas cuesta solo en el modelo, no en la
+tasa.
+</Why>
+</Step>
+</Proof>
+
+<ContractionFactorDemo />
+
+---
+
+## Parte (d): intervalo de pasos válidos
+
+### Intuición
+
+Para que el método **contraiga** necesitamos $\rho(s) < 1$, lo que
+equivale a $|1 - sm| < 1$ y $|1 - sM| < 1$ simultáneamente. Eso impone
+$0 < s < 2/M$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="|1 − sλ| < 1 ⇔ 0 < s < 2/λ">
+Para $\lambda > 0$ y $s \geq 0$:
+$$
+|1 - s\lambda| < 1 \;\Longleftrightarrow\; -1 < 1 - s\lambda < 1 \;\Longleftrightarrow\; 0 < s < \tfrac{2}{\lambda}.
+$$
+
+<Why>
+Manipulación directa de la doble desigualdad. Para $s = 0$, $1 - 0 = 1$,
+no contrae. Para $s = 2/\lambda$, $1 - 2 = -1$, módulo 1. Estrictamente
+$0 < s < 2/\lambda$.
+</Why>
+</Step>
+
+<Step n={2} title="Imponer ambas desigualdades">
+$\rho(s) < 1$ pide $|1 - sm| < 1$ y $|1 - sM| < 1$. La primera da
+$0 < s < 2/m$, la segunda $0 < s < 2/M$. Como $m \leq M$, $2/m \geq 2/M$,
+y la condición restrictiva es:
+$$
+\boxed{\; 0 \;<\; s \;<\; \tfrac{2}{M}.\;}
+$$
+
+<Why>
+El **modo más rápido** de $Q$ (autovalor $M$) impone la restricción
+estricta sobre $s$. Si pasás de $2/M$, el modo más rápido se vuelve
+inestable y el método diverge a lo largo de ese autovector. Es exactamente
+lo mismo que en steepest descent sin restricciones: la cota es $L = M$.
+</Why>
+</Step>
+
+<Step n={3} title="Comparar con steepest descent">
+Sin restricciones, GD para esta cuadrática converge si $0 < s < 2/M$,
+con la misma tasa $\rho(s) = \max(|1 - sm|, |1 - sM|)$.
+
+**Conclusión: gradiente proyectado tiene exactamente la misma cota de
+estabilidad y la misma tasa que steepest descent.** La proyección sobre
+un convexo no introduce ningún costo adicional en el análisis lineal.
+
+<Why>
+Esto es notable. La intuición ingenua diría "proyectar después de cada
+paso es introducir un proceso adicional que podría romper el progreso".
+La no expansividad lo evita: la proyección preserva (o mejora) la
+distancia al óptimo. La estructura del análisis es idéntica.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (e): paso óptimo y tasa límite
+
+### Intuición
+
+$\rho(s)$ es máximo de dos rectas en $s$: $|1 - sm|$ (decrece desde 1
+hasta tocar 0 en $s = 1/m$, después crece) y $|1 - sM|$ (decrece desde 1
+hasta tocar 0 en $s = 1/M$, después crece). En el rango relevante las
+dos ramas activas son $1 - sm$ (decreciente, dominante para $s$ chico) y
+$sM - 1$ (creciente, dominante para $s$ grande): se cruzan cuando
+$1 - sm = sM - 1$, es decir $s = 2/(m+M)$, y ahí está el mínimo de la
+envolvente.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Identificar las ramas activas">
+Para $s$ chico, $1 - sm > 0$ y $1 - sM > 0$, así que
+$\rho(s) = 1 - sm$ (porque $sm < sM$ implica $1 - sm > 1 - sM$).
+
+Para $s$ grande, $1 - sm < 0$ y $1 - sM < 0$:
+$\rho(s) = sM - 1$ (porque $sM > sm$).
+
+En el intermedio aparece la transición.
+
+<Why>
+Para $s \in (0, 2/M)$ ambas ramas están en módulo $< 1$. La rama $|1 - sm|$
+es $1 - sm$ mientras $s < 1/m$ y $sm - 1$ después; análogo para $|1 - sM|$.
+Hay que identificar dónde **el máximo** cambia de rama.
+</Why>
+</Step>
+
+<Step n={2} title="Punto de cruce">
+$\rho(s) = \max(1 - sm, sM - 1)$ en el rango relevante (suponiendo
+$s \in (1/M, 2/M)$, donde $sM > 1$ y $sm < 1$). Igualando las dos:
+$$
+1 - sm \;=\; sM - 1 \;\Longleftrightarrow\; 2 \;=\; s(m + M) \;\Longleftrightarrow\; s^* \;=\; \tfrac{2}{m + M}.
+$$
+
+<Why>
+En el punto de cruce, las dos ramas valen lo mismo. Antes domina una,
+después domina la otra: $s^*$ es el mínimo del máximo (minimax).
+</Why>
+</Step>
+
+<Step n={3} title="Valor mínimo de ρ">
+Sustituyendo $s = s^* = 2/(m+M)$:
+$$
+\rho^* \;=\; 1 - \tfrac{2m}{m+M} \;=\; \tfrac{M - m}{M + m} \;=\; \tfrac{\kappa - 1}{\kappa + 1},
+$$
+donde $\kappa = M/m$ es el número de condición.
+
+<Why>
+La fórmula $\rho^* = (\kappa - 1)/(\kappa + 1)$ es la **misma** que para
+GD sin restricciones con paso óptimo $s = 2/(m+M)$ sobre cuadráticas.
+Todo el análisis de mal-condicionamiento se traslada idéntico al caso
+con restricciones.
+</Why>
+</Step>
+
+<Step n={4} title="Tasa límite asintótica">
+Iterando con $s = s^*$:
+$$
+\|x^{k+1} - x^*\| \;\leq\; \rho^*\,\|x^k - x^*\|, \qquad \lim_k \frac{\|x^{k+1} - x^*\|}{\|x^k - x^*\|} \;=\; \rho^* \;=\; \frac{M - m}{M + m}.
+$$
+
+(En general la cota es solo desigualdad, pero genéricamente la dinámica se
+alinea con el modo de peor contracción y la cota se vuelve igualdad.)
+
+<Why>
+Esta es la respuesta del ejercicio: tasa óptima $(M-m)/(M+m)$. Para
+$\kappa$ grande (mal condicionado), $\rho^* \approx 1 - 2/\kappa$,
+necesitando $O(\kappa\,\log(1/\varepsilon))$ iteraciones para gap
+$\varepsilon$. Para acelerar a $O(\sqrt{\kappa}\,\log(1/\varepsilon))$
+hace falta Nesterov proyectado (P3-Ej2).
+</Why>
+</Step>
+</Proof>
+
+<PGTrajectoryDemo />
+
+En la viz, la trayectoria de gradiente proyectado avanza hacia $x^*$ en
+el borde de la caja. Con $s$ chico converge lento, con $s = s^* = 2/(m+M)$
+es la tasa óptima, y con $s > 2/M$ diverge.
+
+---
+
+## Errores típicos
+
+<Warning>
+- **Olvidar la no expansividad** y querer probar la contracción
+  directamente: la prueba elegante factorea por $T = P \circ (I - s\nabla f)$
+  y solo usa que $P$ no expande.
+- **Confundir $\rho(s) < 1$ con $\rho(s) \leq 1$**: el caso $\rho = 1$
+  no contrae estrictamente y puede no converger (queda atrapado en el
+  límite del intervalo). Se pide $0 < s < 2/M$ **estricto**.
+- **Asumir que $I - sQ$ es contracción para todo $s > 0$**: solo lo es
+  en $(0, 2/M)$. Más allá, los modos rápidos divergen exponencialmente.
+- **Pensar que la tasa óptima es $\rho^* \approx 1 - 1/\kappa$**: es
+  $\rho^* = (\kappa - 1)/(\kappa + 1) \approx 1 - 2/\kappa$ para $\kappa$
+  grande. La diferencia es factor 2, pero la complejidad asintótica
+  $O(\kappa\,\log(1/\varepsilon))$ no cambia.
+- **Pretender extender directo a $f$ no cuadrática**: la igualdad
+  $\nabla f(x) - \nabla f(x^*) = Q(x - x^*)$ usa cuadraticidad. Para $f$
+  fuertemente convexa con gradiente Lipschitz, hay que usar un argumento
+  análogo con co-coercividad, no álgebra lineal exacta.
+- **Olvidar que el análisis es de norma**, no por componentes: $I - sQ$
+  diagonalizada en la base de autovectores tiene autovalores
+  $1 - s\lambda_i$. La norma espectral es el peor de los módulos.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿Por qué la proyección sobre un convexo cerrado es no expansiva?"
+>
+La caracterización variacional dice que $\langle z - P(z), x - P(z)\rangle \leq 0$
+para todo $x \in \mathcal{X}$. Aplicada a dos puntos y sumando, queda
+$\|P(x) - P(y)\|^2 \leq \langle x - y, P(x) - P(y)\rangle$, y por
+Cauchy-Schwarz, $\|P(x) - P(y)\| \leq \|x - y\|$. Geometricamente:
+proyectar "achata" la geometría hacia el conjunto.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="¿Cómo entra la cuadraticidad en la prueba de la parte (b)?"
+>
+Permite la igualdad $\nabla f(x) - \nabla f(x^*) = Q(x - x^*)$. Sustituida
+en la cota tras no expansividad, da
+$x^k - s\nabla f(x^k) - (x^* - s\nabla f(x^*)) = (I - sQ)(x^k - x^*)$,
+es decir, recurrencia **lineal exacta** con matriz $I - sQ$. Para $f$
+no cuadrática, esto se vuelve cota con error $O(\|x^k - x^*\|^2)$ y
+se necesita argumento más fino.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Cuál es el rango de pasos s que asegura convergencia y por qué?"
+>
+$0 < s < 2/M$. La cota viene del modo más rápido de $Q$: con $s$ más
+grande, $|1 - sM| > 1$ y el método diverge a lo largo del autovector
+asociado a $M$. El modo lento ($\lambda = m$) no impone restricción
+adicional ($2/m \geq 2/M$).
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="¿Cuál es el paso óptimo y la tasa de convergencia óptima?"
+>
+$s^* = 2/(m + M)$ y $\rho^* = (M - m)/(M + m) = (\kappa - 1)/(\kappa + 1)$
+con $\kappa = M/m$. Vienen de minimizar $\rho(s) = \max(|1 - sm|, |1 - sM|)$:
+es una V cuyas dos ramas se cruzan en $s^*$. Para $\kappa \gg 1$,
+$\rho^* \approx 1 - 2/\kappa$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="Comparado con steepest descent sin restricciones, ¿qué cambia?"
+>
+Nada en la tasa: el rango de $s$ admisibles es el mismo y la tasa óptima
+es idéntica. La proyección sobre un convexo es "gratis" en términos del
+análisis. Esto se debe a su no expansividad, que hace que el operador
+$T = P \circ (I - s\nabla f)$ sea contracción siempre que $I - s\nabla f$
+lo sea.
+</ControlQuestion>
+
+<ControlQuestion
+  n={6}
+  question="¿Por qué $I - sQ$ tiene autovalores $1 - s\lambda$?"
+>
+Si $Q\,v = \lambda v$, entonces $(I - sQ)\,v = v - s\lambda v = (1 - s\lambda)\,v$.
+$v$ es autovector de $I - sQ$ con autovalor $1 - s\lambda$. Como toda
+matriz simétrica admite base ortonormal de autovectores, esto agota todos
+los autovalores de $I - sQ$.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**Problema.** $\min_{x \in \mathcal{X}} f(x)$, $f(x) = \tfrac12 x^{\top}Qx - b^{\top}x$, $Q \succ 0$, $\mathcal{X}$ convexo cerrado.
+
+**Iteración.** $x^{k+1} = P_{\mathcal{X}}(x^k - s\,\nabla f(x^k))$, $\nabla f(x) = Qx - b$.
+
+**No expansividad.** $\|P_{\mathcal{X}}(x) - P_{\mathcal{X}}(y)\| \leq \|x - y\|$. Sale de la caracterización variacional + Cauchy-Schwarz.
+
+**Punto fijo.** $x^* = P_{\mathcal{X}}(x^* - s\,\nabla f(x^*))$ (KKT proyectado).
+
+**Cota lineal.** $\|x^{k+1} - x^*\| \leq \|(I - sQ)(x^k - x^*)\| \leq \rho(s)\,\|x^k - x^*\|$, con $\rho(s) = \max(|1 - sm|, |1 - sM|)$.
+
+**Estabilidad.** Convergencia $\Leftrightarrow s \in (0, 2/M)$.
+
+**Paso óptimo.** $s^* = \tfrac{2}{m + M}$, tasa $\rho^* = \tfrac{M - m}{M + m} = \tfrac{\kappa - 1}{\kappa + 1}$.
+
+**Misma tasa que SD sin restricciones**: la proyección no penaliza el análisis lineal.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p3-ej3" />

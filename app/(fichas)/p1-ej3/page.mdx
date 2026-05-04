@@ -120,12 +120,13 @@ exactamente eso.
 
 <JensenDemo />
 
-Movés los tres puntos sobre la curva y los pesos $\lambda_i$. El triángulo rojo
-es el casco convexo de $(x_1, f(x_1)), (x_2, f(x_2)), (x_3, f(x_3))$. El punto
-del lado derecho de Jensen (el círculo blanco) es una combinación convexa de
-los vértices, así que cae dentro del triángulo. El punto azul sobre la curva
-es $f$ del centroide en $x$. La separación naranja entre ellos es el gap de
-Jensen, siempre $\geq 0$.
+Movés los tres puntos $x_1, x_2, x_3$ sobre la curva y los pesos $\lambda_i$.
+Los dos puntos clave caen alineados verticalmente en $\bar x = \sum \lambda_i
+x_i$: el **azul** abajo es $f(\bar x)$ (lado izquierdo de Jensen, sobre la
+curva); el **naranja** arriba es $\sum \lambda_i f(x_i)$ (lado derecho de
+Jensen). La barra naranja mide el gap entre ellos. Para $f$ convexa, el
+naranja queda arriba del azul: ese es exactamente el contenido geométrico
+de Jensen.
 
 ### Demostración
 

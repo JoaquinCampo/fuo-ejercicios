@@ -46,7 +46,7 @@ export const fichas = [
     practico: 2,
     ejercicio: 2,
     estimated_minutes: 90,
-    status: "todo",
+    status: "draft",
   },
   {
     id: "P2-Ej3",
@@ -55,7 +55,7 @@ export const fichas = [
     practico: 2,
     ejercicio: 3,
     estimated_minutes: 90,
-    status: "todo",
+    status: "draft",
   },
   {
     id: "P2-Ej4",
@@ -64,7 +64,7 @@ export const fichas = [
     practico: 2,
     ejercicio: 4,
     estimated_minutes: 75,
-    status: "todo",
+    status: "draft",
   },
   {
     id: "P2-Ej5",
@@ -73,7 +73,7 @@ export const fichas = [
     practico: 2,
     ejercicio: 5,
     estimated_minutes: 90,
-    status: "todo",
+    status: "draft",
   },
   {
     id: "P3-Ej3",
@@ -82,7 +82,7 @@ export const fichas = [
     practico: 3,
     ejercicio: 3,
     estimated_minutes: 90,
-    status: "todo",
+    status: "draft",
   },
   {
     id: "P3-Ej4",

@@ -1,0 +1,596 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { DescentLemmaDemo } from "./_components/DescentLemmaDemo";
+import { ProgressDemo } from "./_components/ProgressDemo";
+import { StepSizeRegimesDemo } from "./_components/StepSizeRegimesDemo";
+
+export const metadata = {
+  title: "P2-Ej2: Convergencia O(1/k) de steepest descent",
+  description:
+    "Lema de descenso, propiedad de descenso del gradiente con paso fijo, y tasa O(1/k) en el caso convexo L-smooth.",
+};
+
+<FichaHeader
+  practico={2}
+  ejercicio={2}
+  title="Convergencia O(1/k) de steepest descent"
+  estimated_minutes={90}
+/>
+
+## Motivación
+
+El **descenso por gradiente** (steepest descent) es el algoritmo más simple
+para minimizar una función diferenciable: en cada paso te movés en la
+dirección opuesta al gradiente, escalada por un paso $\alpha$,
+
+$$
+x_{k+1} \;=\; x_k - \alpha\,\nabla f(x_k).
+$$
+
+Las preguntas básicas son:
+
+1. ¿**Cuándo desciende**? Es decir, ¿cuándo $f(x_{k+1}) < f(x_k)$?
+2. Si $f$ es **convexa**, ¿**a qué velocidad** converge el método al óptimo?
+
+La respuesta a las dos pasa por un solo lema, el **lema de descenso**, que
+sale de pedir nada más que el gradiente sea Lipschitz. Con eso se demuestra:
+
+- Hay descenso garantizado mientras $0 < \alpha < 2/L$.
+- Si además $f$ es convexa y $\alpha < 1/L$, $f(x_k) - f(x^*) = O(1/k)$.
+
+Esta cota es **canónica** en optimización: aparece en regresión logística,
+SVMs, redes neuronales con learning rate fijo. Saber dónde sale es lo que
+distingue ajustar el hiperparámetro a ojo de hacerlo razonando.
+
+## Definiciones y herramientas
+
+<Definition title="Gradiente Lipschitz (L-smooth)">
+$f \colon \mathbb{R}^n \to \mathbb{R}$ es **L-smooth** (o tiene gradiente
+Lipschitz con constante $L > 0$) si
+$$
+\|\nabla f(x) - \nabla f(y)\| \;\leq\; L\,\|x - y\| \quad \forall\, x, y \in \mathbb{R}^n.
+$$
+
+**Lectura geométrica**. La pendiente del gradiente no puede crecer más rápido
+que $L$. Equivalentemente: si $f$ es $C^2$, entonces $\|\nabla^2 f(x)\| \leq L$
+para todo $x$ (la Hessiana está acotada en norma operador, o $\nabla^2 f \preceq L\,I$).
+</Definition>
+
+<Definition title="Steepest descent con paso constante">
+Dada $f$ diferenciable, $\alpha > 0$ y $x_0 \in \mathbb{R}^n$,
+$$
+x_{k+1} \;=\; x_k - \alpha\,\nabla f(x_k), \qquad k = 0, 1, 2, \ldots
+$$
+
+Es la versión más austera del método: paso fijo, sin búsqueda de línea, sin
+momentum.
+</Definition>
+
+## Enunciado
+
+Sea $f \colon \mathbb{R}^n \to \mathbb{R}$ diferenciable con gradiente
+$L$-Lipschitz, y sea $x_{k+1} = x_k - \alpha\,\nabla f(x_k)$.
+
+- **(a)** *Lema de descenso*. Para todo $x, y \in \mathbb{R}^n$,
+  $$
+  f(y) \;\leq\; f(x) + \langle \nabla f(x),\, y - x\rangle + \frac{L}{2}\,\|y - x\|^2.
+  $$
+- **(b)** *Propiedad de descenso*.
+  $$
+  f(x_{k+1}) \;\leq\; f(x_k) - \Big(\alpha - \tfrac{L}{2}\,\alpha^2\Big)\,\|\nabla f(x_k)\|^2.
+  $$
+  Concluir que si $0 < \alpha < 2/L$ y $\nabla f(x_k) \neq 0$, entonces
+  $f(x_{k+1}) < f(x_k)$.
+- **(c)** *Tasa O(1/k)*. Si además $f$ es **convexa**, $\alpha < 1/L$ y
+  $x^* \in \arg\min f$, entonces
+  $$
+  f(x_k) - f(x^*) \;\leq\; \frac{\|x_0 - x^*\|^2}{2\,\alpha\,k}.
+  $$
+- **(d)** Concluir que $f(x_k) - f(x^*) = O(1/k)$ e interpretar.
+
+---
+
+## Parte (a): el lema de descenso
+
+### Intuición
+
+Si el gradiente es $L$-Lipschitz, $f$ no puede curvarse "más" que la parábola
+$\tfrac{L}{2}\|y - x\|^2$ alrededor de cualquier punto $x$. La cota dice
+exactamente eso: $f$ está **por debajo** de la cuadrática
+
+$$
+q_x(y) \;=\; f(x) + \langle \nabla f(x), y - x\rangle + \tfrac{L}{2}\,\|y - x\|^2,
+$$
+
+que es la **tangente** en $x$ más una corrección de segundo orden con
+coeficiente $L/2$. Para $f$ cuadrática ($\nabla^2 f = L\,I$) la cota es
+**igualdad**; para $f$ con curvatura menor, es desigualdad estricta.
+
+<DescentLemmaDemo />
+
+Bajá $L$ por debajo del máximo de $f''$ en el slider y vas a ver que la
+parábola naranja **cae bajo** la curva azul: $L$ tiene que ser suficientemente
+grande para que la cota sea válida.
+
+### Demostración
+
+<Proof>
+Fijamos $x, y \in \mathbb{R}^n$. La idea es escribir $f(y) - f(x)$ usando el
+teorema fundamental del cálculo a lo largo del segmento entre $x$ e $y$, y
+después acotar.
+
+<Step n={1} title="TFC en una variable a lo largo del segmento">
+Sea $\varphi(t) = f\big(x + t\,(y - x)\big)$ para $t \in [0, 1]$. Entonces
+$\varphi'(t) = \langle \nabla f(x + t(y-x)),\, y - x\rangle$ y
+$$
+f(y) - f(x) \;=\; \varphi(1) - \varphi(0) \;=\; \int_0^1 \big\langle \nabla f\big(x + t(y-x)\big),\, y - x\big\rangle\,dt.
+$$
+
+<Why>
+**No usamos convexidad ni nada especial todavía.** Es solo la regla de la
+cadena para $\varphi$ y el TFC. El truco recurrente es: cuando querés
+controlar una diferencia $f(y) - f(x)$ y solo sabés algo sobre $\nabla f$,
+escribí la diferencia como **integral del gradiente** sobre el segmento.
+Ahí cualquier hipótesis sobre $\nabla f$ pasa al lado derecho.
+</Why>
+</Step>
+
+<Step n={2} title="Sumar y restar la tangente">
+Sumamos y restamos $\langle \nabla f(x),\, y - x\rangle$ dentro de la
+integral:
+$$
+f(y) - f(x) \;=\; \langle \nabla f(x),\, y - x\rangle + \int_0^1 \big\langle \nabla f(x + t(y-x)) - \nabla f(x),\, y - x\big\rangle\,dt.
+$$
+
+<Why>
+Lo que queremos demostrar tiene la forma "tangente en $x$ + cuadrática". El
+término de la **tangente** ya está separado; el resto es un error que
+queremos acotar por $\tfrac{L}{2}\|y-x\|^2$. Para que aparezca la condición
+de Lipschitz, la integral tiene que tener la diferencia
+$\nabla f(x + t(y-x)) - \nabla f(x)$ adentro: la armamos sumando y restando
+$\nabla f(x)$. Es la misma técnica que usar pivote en una desigualdad triangular.
+</Why>
+</Step>
+
+<Step n={3} title="Cauchy–Schwarz + Lipschitz dentro de la integral">
+Para todo $t \in [0, 1]$, por Cauchy–Schwarz y la hipótesis $L$-Lipschitz,
+$$
+\big|\langle \nabla f(x + t(y-x)) - \nabla f(x),\, y - x\rangle\big|
+\;\leq\; \|\nabla f(x + t(y-x)) - \nabla f(x)\|\cdot\|y - x\|
+\;\leq\; L\,t\,\|y - x\|^2.
+$$
+
+<Why>
+Cauchy–Schwarz da $|\langle a, b\rangle| \leq \|a\|\,\|b\|$; sin condición de
+signo. La condición de Lipschitz aplica con argumentos
+$x + t(y - x)$ y $x$, cuya diferencia es $t(y - x)$ y por lo tanto la cota
+queda $L\cdot t\cdot \|y-x\|$. **Conservamos el factor $t$** (no lo
+"absorbemos" en un máximo): como $t$ va a integrarse en $[0,1]$, ese factor
+se vuelve $1/2$, que es el origen del coeficiente $L/2$ del enunciado.
+</Why>
+</Step>
+
+<Step n={4} title="Integrar la cota">
+$$
+\bigg|\int_0^1 \big\langle \nabla f(x + t(y-x)) - \nabla f(x),\, y - x\big\rangle\,dt\bigg|
+\;\leq\; \int_0^1 L\,t\,\|y - x\|^2\,dt
+\;=\; \tfrac{L}{2}\,\|y - x\|^2.
+$$
+
+<Why>
+Desigualdad triangular para integrales: $|\int g| \leq \int |g|$. Después,
+$\int_0^1 t\,dt = 1/2$. Notar que la cota es **simétrica** (vale como cota
+superior y como cota inferior con signo opuesto), pero del enunciado solo
+necesitamos la cota superior.
+</Why>
+</Step>
+
+<Step n={5} title="Combinar y concluir">
+De los pasos 2 y 4:
+$$
+f(y) - f(x) - \langle \nabla f(x), y - x\rangle \;\leq\; \tfrac{L}{2}\,\|y - x\|^2,
+$$
+es decir,
+$$
+f(y) \;\leq\; f(x) + \langle \nabla f(x), y - x\rangle + \tfrac{L}{2}\,\|y - x\|^2.
+\quad\square
+$$
+
+<Why>
+La hipótesis de convexidad **nunca se usó** en (a). El lema de descenso es
+consecuencia directa de la regularidad ($\nabla f$ Lipschitz), no de la
+convexidad. Esto es importante: la propiedad (b) que viene a continuación
+también es libre de convexidad. La convexidad recién aparece en (c), para
+sacar la tasa de convergencia al mínimo.
+</Why>
+</Step>
+</Proof>
+
+### Errores típicos en (a)
+
+<Warning>
+- Asumir que $f$ es convexa para probar (a). **No hace falta.** Solo Lipschitz.
+- Olvidar el factor $t$ en la cota intermedia. Sin ese $t$ la integral da
+  $L$ en lugar de $L/2$, y se pierde el coeficiente correcto.
+- Pensar que la cota requiere $f$ de clase $C^2$. **No**: alcanza con $f$
+  diferenciable y $\nabla f$ Lipschitz (o sea, $f$ es $C^{1,1}$).
+</Warning>
+
+---
+
+## Parte (b): propiedad de descenso
+
+### Intuición
+
+Si elegimos $y = x_{k+1} = x_k - \alpha\,\nabla f(x_k)$ y $x = x_k$ en el
+lema de descenso, **toda la prueba se vuelve cuenta**: en el lado derecho
+aparece exactamente la cuadrática $\alpha - \tfrac{L}{2}\alpha^2$ multiplicando
+$\|\nabla f(x_k)\|^2$. Esa cuadrática es **positiva** mientras $\alpha \in
+(0, 2/L)$, y se maximiza en $\alpha = 1/L$ con valor $1/(2L)$.
+
+<ProgressDemo />
+
+Movés $\alpha$ y mirás cuándo el factor de progreso es positivo (descenso
+garantizado), cuándo es máximo (paso "óptimo" para la cota), y cuándo se
+vuelve negativo (la cota deja de garantizar nada).
+
+<StepSizeRegimesDemo />
+
+Sobre la cuadrática 1D vas a ver los regímenes en vivo: $\alpha < 1/L$
+descenso monótono, $\alpha = 1/L$ un solo paso, $1/L < \alpha < 2/L$
+oscilación amortiguada, $\alpha = 2/L$ frontera, $\alpha > 2/L$ divergencia.
+
+### Demostración
+
+<Proof>
+Aplicamos el lema de descenso con $x = x_k$ e $y = x_{k+1} = x_k - \alpha\,\nabla f(x_k)$.
+
+<Step n={1} title="Identificar las piezas">
+$$
+y - x \;=\; -\alpha\,\nabla f(x_k), \qquad
+\langle \nabla f(x_k),\, y - x\rangle \;=\; -\alpha\,\|\nabla f(x_k)\|^2,
+\qquad
+\|y - x\|^2 \;=\; \alpha^2\,\|\nabla f(x_k)\|^2.
+$$
+
+<Why>
+Reemplazos puramente algebraicos. Lo importante es notar que la **dirección
+de búsqueda** $-\nabla f$ alinea de forma exacta el producto interno con la
+norma cuadrada: $\langle \nabla f, -\nabla f\rangle = -\|\nabla f\|^2$. Esa
+es la razón por la que el método se llama **steepest descent**: en cada
+paso, te movés en la dirección que minimiza localmente $\langle \nabla f, d\rangle$
+sobre $\|d\| = 1$, que es $d = -\nabla f / \|\nabla f\|$.
+</Why>
+</Step>
+
+<Step n={2} title="Sustituir en el lema de descenso">
+$$
+f(x_{k+1}) \;\leq\; f(x_k) - \alpha\,\|\nabla f(x_k)\|^2 + \tfrac{L}{2}\,\alpha^2\,\|\nabla f(x_k)\|^2
+\;=\; f(x_k) - \Big(\alpha - \tfrac{L}{2}\,\alpha^2\Big)\,\|\nabla f(x_k)\|^2.
+$$
+
+<Why>
+La parte (a) **dijo todo**; lo demás es cuenta. El término lineal en $\alpha$
+es la "buena noticia" (avance esperado por el gradiente), y el término
+cuadrático $\tfrac{L}{2}\alpha^2$ es el "costo" por movernos demasiado. La
+diferencia $\alpha - \tfrac{L}{2}\alpha^2$ codifica el balance.
+</Why>
+</Step>
+
+<Step n={3} title="Analizar el factor α − Lα²/2">
+$$
+g(\alpha) \;=\; \alpha\Big(1 - \tfrac{L}{2}\,\alpha\Big).
+$$
+Es positivo en $\alpha \in (0,\, 2/L)$, se anula en los extremos, y se
+maximiza en $\alpha = 1/L$ con valor $1/(2L)$.
+
+<Why>
+Es una parábola invertida con raíces $0$ y $2/L$; el vértice está en el
+punto medio $1/L$. Sustituyendo: $g(1/L) = 1/L - L/(2L^2) = 1/(2L)$. Por
+eso $\alpha = 1/L$ es el "paso óptimo" para esta cota y $1/(2L)$ es la
+máxima tasa de progreso por iteración (en términos de $\|\nabla f\|^2$).
+**Atención**: que $\alpha = 1/L$ sea óptimo *para la cota* no significa que
+sea óptimo en general — para una cuadrática con $\nabla^2 f = L\,I$, sí es
+óptimo (un solo paso), pero para una con condicionamiento mayor,
+$\alpha = 2/(L + m)$ es estrictamente mejor.
+</Why>
+</Step>
+
+<Step n={4} title="Concluir descenso estricto">
+Si $0 < \alpha < 2/L$, entonces $g(\alpha) > 0$. Si además $\nabla f(x_k) \neq 0$,
+$$
+f(x_{k+1}) \;\leq\; f(x_k) - g(\alpha)\,\|\nabla f(x_k)\|^2 \;<\; f(x_k). \quad\square
+$$
+
+<Why>
+Sin $\nabla f(x_k) \neq 0$ no podemos sacar la desigualdad estricta: si el
+gradiente ya es cero, $x_k$ es punto crítico y el método se queda quieto
+($x_{k+1} = x_k$), trivialmente con $f(x_{k+1}) = f(x_k)$.
+</Why>
+</Step>
+</Proof>
+
+### Errores típicos en (b)
+
+<Warning>
+- Pedir convexidad. **No hace falta** ni acá ni en (a): la propiedad de
+  descenso es solo regularidad.
+- Confundir descenso con convergencia al mínimo. El método puede quedar
+  atrapado en un punto crítico no global si $f$ no es convexa.
+- Tomar $\alpha = 2/L$ esperando descenso. **En la frontera** la cota no
+  garantiza descenso estricto; podés quedarte oscilando sin avanzar.
+</Warning>
+
+---
+
+## Parte (c): tasa O(1/k) en el caso convexo
+
+### Intuición
+
+Hasta acá no usamos convexidad. La convexidad sirve para **traducir el
+descenso (controlado por $\|\nabla f\|^2$) en convergencia al mínimo**
+(controlada por la distancia al óptimo). La idea de la prueba es:
+
+1. La convexidad da $f(x_k) - f(x^*) \leq \langle \nabla f(x_k),\, x_k - x^*\rangle$.
+2. La distancia al óptimo $\|x_k - x^*\|^2$ tiene una recurrencia útil.
+3. Combinando con (b) se obtiene una desigualdad que **telescopia**.
+4. La monotonía de $f(x_k)$ permite cerrar con un argumento de promedio.
+
+### Demostración
+
+<Proof>
+Sea $\delta_k = f(x_k) - f(x^*)$. Asumimos $\alpha \leq 1/L$, lo que implica
+$\alpha - \tfrac{L}{2}\alpha^2 \geq \alpha/2$ (porque $1 - L\alpha/2 \geq 1/2$).
+
+<Step n={1} title="Convexidad → cota del gap por el gradiente">
+La desigualdad de soporte para funciones convexas (tangente debajo del
+gráfico) en $x_k$ con prueba en $x^*$ da
+$$
+f(x^*) \;\geq\; f(x_k) + \langle \nabla f(x_k),\, x^* - x_k\rangle,
+$$
+es decir,
+$$
+\delta_k \;=\; f(x_k) - f(x^*) \;\leq\; \langle \nabla f(x_k),\, x_k - x^*\rangle.
+$$
+
+<Why>
+La desigualdad de soporte es equivalente a la convexidad para $f$
+diferenciable: el plano tangente en cualquier punto queda por debajo del
+gráfico. Acá la usamos al revés: nos da una **cota superior** sobre el gap
+de valor objetivo en términos del producto interno entre el gradiente y la
+dirección al óptimo. Esto es lo que conecta el lado "energía"
+($\|\nabla f\|^2$) con el lado "geometría" ($\|x_k - x^*\|^2$).
+</Why>
+</Step>
+
+<Step n={2} title="Recurrencia de la distancia al óptimo">
+Como $x_{k+1} = x_k - \alpha\,\nabla f(x_k)$,
+$$
+\|x_{k+1} - x^*\|^2
+\;=\; \|x_k - x^*\|^2 - 2\,\alpha\,\langle \nabla f(x_k),\, x_k - x^*\rangle
++ \alpha^2\,\|\nabla f(x_k)\|^2.
+$$
+
+<Why>
+Es solo expandir $\|a - b\|^2 = \|a\|^2 - 2\langle a, b\rangle + \|b\|^2$
+con $a = x_k - x^*$ y $b = \alpha\,\nabla f(x_k)$. **Acá entra la
+estructura del método**: la actualización es lineal en el gradiente, así
+que aparece un término cruzado lineal y otro cuadrático. El cruzado es
+**bueno** (porque convexidad lo conecta con $\delta_k$); el cuadrático es
+**malo** (no lo controlamos directamente — pero lo vamos a controlar con (b)).
+</Why>
+</Step>
+
+<Step n={3} title="Usar convexidad para acotar el término cruzado">
+Por el paso 1, $-\langle \nabla f(x_k),\, x_k - x^*\rangle \leq -\delta_k$. Entonces
+$$
+\|x_{k+1} - x^*\|^2 \;\leq\; \|x_k - x^*\|^2 - 2\,\alpha\,\delta_k + \alpha^2\,\|\nabla f(x_k)\|^2.
+$$
+
+<Why>
+Cambiamos un objeto medido en gradientes por uno medido en gaps de valor
+objetivo. Notar que la desigualdad va en el sentido correcto **porque
+multiplicamos por $-2\alpha < 0$**, lo que invierte el sentido. La
+convexidad fue lo que hizo posible el cambio.
+</Why>
+</Step>
+
+<Step n={4} title="Usar (b) para acotar el término cuadrático">
+De la propiedad de descenso con $\alpha \leq 1/L$:
+$$
+\delta_k - \delta_{k+1} \;=\; f(x_k) - f(x_{k+1}) \;\geq\; \tfrac{\alpha}{2}\,\|\nabla f(x_k)\|^2,
+$$
+o sea $\alpha^2\,\|\nabla f(x_k)\|^2 \leq 2\,\alpha\,(\delta_k - \delta_{k+1})$.
+
+Sustituyendo en el paso 3:
+$$
+\|x_{k+1} - x^*\|^2 \;\leq\; \|x_k - x^*\|^2 - 2\,\alpha\,\delta_k + 2\,\alpha\,(\delta_k - \delta_{k+1})
+\;=\; \|x_k - x^*\|^2 - 2\,\alpha\,\delta_{k+1}.
+$$
+
+<Why>
+**Este es el paso clave de toda la prueba.** El término "malo"
+$\alpha^2\,\|\nabla f\|^2$ se reemplaza por algo que **telescopia**: la
+caída del valor objetivo entre dos pasos consecutivos. La condición
+$\alpha \leq 1/L$ se usa exactamente acá: nos da $\alpha - L\alpha^2/2 \geq \alpha/2$,
+de donde $\alpha^2 \leq 2\alpha\,(\delta_k - \delta_{k+1})/\|\nabla f\|^2$.
+Si el paso fuera más grande la cota se debilita y la prueba no cierra.
+</Why>
+</Step>
+
+<Step n={5} title="Telescopiar y promediar">
+Reordenando: $2\,\alpha\,\delta_{k+1} \leq \|x_k - x^*\|^2 - \|x_{k+1} - x^*\|^2$.
+Sumando para $k = 0, 1, \ldots, K-1$ (la suma del lado derecho colapsa):
+$$
+2\,\alpha \sum_{k=0}^{K-1} \delta_{k+1} \;\leq\; \|x_0 - x^*\|^2 - \|x_K - x^*\|^2 \;\leq\; \|x_0 - x^*\|^2.
+$$
+
+Por (b), $\delta_k$ es no creciente: $\delta_K \leq \delta_{K-1} \leq \cdots \leq \delta_1$.
+Luego $K\,\delta_K \leq \sum_{k=0}^{K-1} \delta_{k+1}$ y
+$$
+\delta_K \;\leq\; \frac{\|x_0 - x^*\|^2}{2\,\alpha\,K}. \quad\square
+$$
+
+<Why>
+**Truco fundamental en optimización**: si tenés una cota acumulada
+$\sum \delta_k \leq B$ y monotonía $\delta_K \leq \delta_k$ para todo
+$k \leq K$, entonces $K\,\delta_K \leq \sum_{k \leq K} \delta_k \leq B$,
+de donde $\delta_K \leq B/K$. **Sin la monotonía** solo podrías afirmar
+algo sobre el promedio o sobre el mínimo de la sucesión, no sobre el
+último iterado. La monotonía la regala (b).
+</Why>
+</Step>
+</Proof>
+
+### Errores típicos en (c)
+
+<Warning>
+- Olvidar la **monotonía** y concluir solo $\min_k \delta_k = O(1/K)$. Es
+  cierto pero más débil; con (b) se puede afirmar para el último iterado.
+- Tomar $\alpha = 1/L$ sin estricto. La prueba pide $\alpha < 1/L$ (o más
+  generosamente $\alpha \leq 1/L$, dependiendo de cómo se redondee la
+  desigualdad en el paso 4). En la práctica, $\alpha = 1/L$ funciona.
+- Confundir convexidad con **fuerte** convexidad. La cota O(1/k) es para
+  convexidad simple. Con $f$ $\mu$-fuertemente convexa, la tasa mejora a
+  geométrica con factor $1 - \mu/L$ (P2-Ej3 trabaja eso).
+- Olvidar que $\|x_K - x^*\|^2 \geq 0$ y, por lo tanto, **descartarlo** de
+  la suma telescópica es legítimo.
+</Warning>
+
+---
+
+## Parte (d): interpretación
+
+### Demostración
+
+<Proof>
+Por (c), para todo $k \geq 1$,
+$$
+f(x_k) - f(x^*) \;\leq\; \frac{C}{k}, \qquad C = \frac{\|x_0 - x^*\|^2}{2\,\alpha},
+$$
+con $C$ constante (no depende de $k$). Por definición, $f(x_k) - f(x^*) = O(1/k)$.
+$\square$
+</Proof>
+
+### Lectura
+
+Para llegar a un gap $\varepsilon > 0$ hace falta $k \geq C/\varepsilon$
+iteraciones. **Atención** a las dos consecuencias:
+
+1. **Para reducir 10 veces el error, necesitás 10 veces más iteraciones.**
+   Esto es muy lento comparado con la tasa **lineal** ($\varepsilon \cdot
+   r^k$) que aparece bajo fuerte convexidad o con búsqueda de línea (P2-Ej3).
+2. **La constante $C$ depende cuadráticamente de la distancia inicial** y
+   linealmente de $1/\alpha$. Empezar lejos del óptimo o usar un paso muy
+   chico empeora mucho la cota — pero $\alpha < 1/L$ es necesaria, así que
+   el "paso ideal de la cota" es $\alpha = 1/L$.
+
+En benchmarks reales (logreg, SVMs, ...) este resultado es la garantía
+**peor caso**; el comportamiento típico suele ser mejor, y métodos
+acelerados (Nesterov, P2-Ej4) llegan a $O(1/k^2)$ con la misma información.
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿Por qué la propiedad (b) no requiere convexidad de f?"
+>
+Porque (b) solo usa el lema de descenso (a), y este último depende
+únicamente de la regularidad ($\nabla f$ Lipschitz), no de convexidad. Es
+una propiedad **local**: dice que el siguiente iterado va a estar mejor
+que el actual; no dice nada sobre alcanzar un óptimo global.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="Si f es L-smooth pero no convexa, ¿qué garantiza el método de gradiente con paso α = 1/L?"
+>
+Que $f(x_{k+1}) < f(x_k)$ siempre que $\nabla f(x_k) \neq 0$. La sucesión
+$\{f(x_k)\}$ es decreciente; si $f$ está acotada inferiormente,
+$\sum \|\nabla f(x_k)\|^2 < \infty$ y por lo tanto
+$\|\nabla f(x_k)\| \to 0$. Pero **no garantiza** convergencia al óptimo
+global: el método puede quedar en un punto crítico no global o en una silla.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Qué pasa si tomamos α exactamente igual a 2/L?"
+>
+La cota da $f(x_{k+1}) \leq f(x_k)$, **sin** estrictez. Para la cuadrática
+$f(x) = \tfrac{L}{2}x^2$ ese paso oscila entre $x_0$ y $-x_0$ sin avanzar:
+$x_{k+1} = (1 - \alpha L)\,x_k = -x_k$. Caso frontera: ni desciende ni
+diverge.
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="Para una f convexa L-smooth, ¿cuál es el paso α que minimiza la cota de (c)?"
+>
+La cota $\|x_0 - x^*\|^2 / (2\,\alpha\,k)$ es decreciente en $\alpha$, así
+que la cota se minimiza maximizando $\alpha$ dentro del rango admisible.
+Como pedimos $\alpha \leq 1/L$, lo mejor que da la cota es $\alpha = 1/L$,
+con valor $L\,\|x_0 - x^*\|^2 / (2k)$. Más grande no respeta la hipótesis
+del paso (4) de la prueba.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Qué cambia si f es además μ-fuertemente convexa?"
+>
+La tasa pasa de $O(1/k)$ a **lineal**: $\|x_k - x^*\|^2 \leq (1 - \mu\alpha)^k\,\|x_0 - x^*\|^2$
+para $\alpha \leq 1/L$. El número de iteraciones para gap $\varepsilon$ baja
+de $O(1/\varepsilon)$ a $O\big(\tfrac{L}{\mu}\,\log(1/\varepsilon)\big)$.
+La diferencia es **enorme** para $\varepsilon$ chico: $1/\varepsilon$
+vs $\log(1/\varepsilon)$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={6}
+  question="¿Para qué se usa la monotonía de δ_k al final?"
+>
+Para concluir sobre $\delta_K$ (último iterado), no solo sobre el promedio.
+Sin monotonía, la suma telescópica solo da
+$\frac{1}{K}\sum \delta_k \leq C/K$, lo que es una **cota de promedio**. La
+monotonía permite reemplazar el promedio por $\delta_K$ y obtener una cota
+para el último valor.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**L-smooth.** $\|\nabla f(x) - \nabla f(y)\| \leq L\,\|x - y\|$. Equivale
+(en $C^2$) a $\nabla^2 f \preceq L\,I$.
+
+**Lema de descenso (a).**
+$f(y) \leq f(x) + \langle \nabla f(x), y - x\rangle + \tfrac{L}{2}\|y-x\|^2$.
+**No usa convexidad.** Sale de TFC + Lipschitz.
+
+**Propiedad de descenso (b).** Con $x_{k+1} = x_k - \alpha\,\nabla f(x_k)$:
+$$
+f(x_{k+1}) \leq f(x_k) - \big(\alpha - \tfrac{L}{2}\alpha^2\big)\,\|\nabla f(x_k)\|^2.
+$$
+Descenso estricto si $\alpha \in (0, 2/L)$ y $\nabla f(x_k) \neq 0$. Paso
+óptimo (de la cota): $\alpha = 1/L$, factor $1/(2L)$.
+
+**Tasa O(1/k) (c).** $f$ convexa L-smooth, $\alpha \leq 1/L$:
+$$
+f(x_k) - f(x^*) \leq \frac{\|x_0 - x^*\|^2}{2\,\alpha\,k}.
+$$
+
+**Trucos clave.**
+- TFC + Cauchy-Schwarz + Lipschitz → lema de descenso (no usa convexidad).
+- Convexidad → $\delta_k \leq \langle \nabla f(x_k),\, x_k - x^*\rangle$.
+- Recurrencia de $\|x_k - x^*\|^2$ + (b) → cancela el cuadrático y telescopia.
+- Monotonía + suma telescópica → cota para $\delta_K$ (no solo promedio).
+
+**Comparación.** Sin convexidad: solo descenso, $\nabla f \to 0$.
+Convexa L-smooth: $O(1/k)$. $\mu$-fuertemente convexa: lineal $\sim
+(1-\mu/L)^k$.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p2-ej2" />

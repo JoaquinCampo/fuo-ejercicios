@@ -1,0 +1,574 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { SecantOneDimDemo } from "./_components/SecantOneDimDemo";
+import { BFGSTrajectoryDemo } from "./_components/BFGSTrajectoryDemo";
+import { CurvatureConditionDemo } from "./_components/CurvatureConditionDemo";
+
+export const metadata = {
+  title: "P2-Ej5: BFGS y condición secante",
+  description:
+    "Métodos cuasi-Newton: condición secante, fórmula BFGS, condición de curvatura y preservación de definida-positiva.",
+};
+
+<FichaHeader
+  practico={2}
+  ejercicio={5}
+  title="BFGS y condición secante"
+  estimated_minutes={90}
+/>
+
+## Motivación
+
+El método de Newton para minimizar $f \in C^2$ usa la iteración
+
+$$
+x_{k+1} \;=\; x_k - (\nabla^2 f(x_k))^{-1}\,\nabla f(x_k),
+$$
+
+que tiene **convergencia cuadrática** cerca del óptimo. El precio: hay que
+calcular la Hessiana y resolver un sistema lineal en cada paso. En grande,
+ambas cosas son caras.
+
+Los métodos **cuasi-Newton** evitan la Hessiana. Mantienen una matriz $D_k$
+que aproxima $(\nabla^2 f(x_k))^{-1}$, hacen un paso
+
+$$
+d_k = -D_k\,\nabla f(x_k), \qquad x_{k+1} = x_k + \alpha_k\,d_k,
+$$
+
+y actualizan $D_{k+1}$ usando solo la información que el paso ya generó:
+$s_k = x_{k+1} - x_k$ e $y_k = \nabla f(x_{k+1}) - \nabla f(x_k)$. La
+**condición secante** $D_{k+1}\,y_k = s_k$ codifica que $D_{k+1}$ se
+comporte como la inversa de la Hessiana sobre la única dirección donde
+tenemos datos.
+
+<SecantOneDimDemo />
+
+En 1D, la condición secante define exactamente el método de la secante:
+$D_{k+1} = s_k/y_k$, que es la recíproca de la pendiente de la cuerda al
+gráfico de $f'$. La fórmula BFGS es la generalización n-dimensional más
+exitosa de esta idea.
+
+## Definiciones y herramientas
+
+<Definition title="Condición secante">
+Dadas $s_k = x_{k+1} - x_k$ e $y_k = \nabla f(x_{k+1}) - \nabla f(x_k)$,
+la matriz $D_{k+1}$ que aproxima $(\nabla^2 f(x_{k+1}))^{-1}$ debe satisfacer
+
+$$
+D_{k+1}\,y_k \;=\; s_k.
+$$
+</Definition>
+
+<Definition title="Actualización BFGS">
+Con $\rho_k = 1/(y_k^{\top} s_k)$:
+
+$$
+D_{k+1} \;=\; \big(I - \rho_k\,s_k y_k^{\top}\big)\,D_k\,\big(I - \rho_k\,y_k s_k^{\top}\big) \;+\; \rho_k\,s_k s_k^{\top}.
+$$
+
+Es una **corrección de rango 2** sobre $D_k$. Está bien definida cuando
+$y_k^{\top} s_k > 0$.
+</Definition>
+
+<Definition title="Condición de curvatura (Wolfe)">
+$$
+\nabla f(x_k)^{\top} d_k \;<\; \nabla f(x_{k+1})^{\top} d_k.
+$$
+
+En términos de $\varphi(\alpha) = f(x_k + \alpha\,d_k)$:
+$\varphi'(0) < \varphi'(\alpha_k)$. Se obtiene típicamente en una búsqueda
+lineal de Wolfe.
+</Definition>
+
+## Enunciado
+
+Sea $f \in C^2(\mathbb{R}^n)$. Recordá Newton:
+$x_{k+1} = x_k - (\nabla^2 f(x_k))^{-1}\,\nabla f(x_k)$. Cuasi-Newton usa
+$d_k = -D_k\,\nabla f(x_k)$.
+
+- **(a)** Mediante Taylor de $\nabla f$ alrededor de $x_{k+1}$, mostrar
+  $\nabla^2 f(x_{k+1})\,s_k \approx y_k$, y motivar la **condición secante**
+  $D_{k+1}\,y_k = s_k$.
+- **(b)** Probar $\big(I - \tfrac{y_k s_k^{\top}}{y_k^{\top} s_k}\big)\,y_k = \mathbf{0}$
+  y deducir que la fórmula BFGS satisface la condición secante.
+- **(c)** Escribir la iteración explícita $x_k \to x_{k+1}$ del método BFGS.
+- **(d)** Mostrar $y_k^{\top} s_k > 0$ si el paso $\alpha_k$ verifica
+  $\nabla f(x_k)^{\top} d_k < \nabla f(x_{k+1})^{\top} d_k$.
+- **(e)** Si $D_k \succ 0$, probar que la actualización BFGS es válida y
+  $D_{k+1} \succ 0$.
+
+---
+
+## Parte (a): condición secante por Taylor
+
+### Intuición
+
+Newton usa la curvatura **exacta**: $\nabla^2 f(x_k)$. Cuasi-Newton la
+**aproxima** sin nunca calcularla, usando solo lo que ya sabemos: cómo
+cambió el gradiente al movernos de $x_k$ a $x_{k+1}$. Esa información
+restringe a $D_{k+1}$ en una sola dirección (la de $s_k$); la condición
+secante recoge eso, y el resto queda libre para imponer otras propiedades
+(simetría, definida positiva, mínima distancia a $D_k$).
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Taylor de ∇f alrededor de x_{k+1}">
+Como $f \in C^2$, expandimos $\nabla f(x_k)$ alrededor de $x_{k+1}$:
+
+$$
+\nabla f(x_k) \;=\; \nabla f(x_{k+1}) + \nabla^2 f(x_{k+1})\,(x_k - x_{k+1}) + o(\|x_k - x_{k+1}\|).
+$$
+
+<Why>
+Es el desarrollo de Taylor de orden 1 para $\nabla f$ (lo que requiere $f \in C^2$).
+El término $\nabla^2 f(x_{k+1})$ aparece como la matriz que linealiza el
+gradiente alrededor del nuevo punto. El resto es $o(\|s_k\|)$, despreciable
+si los pasos son chicos.
+</Why>
+</Step>
+
+<Step n={2} title="Despejar y_k">
+Reordenando y usando $s_k = x_{k+1} - x_k$:
+
+$$
+y_k \;=\; \nabla f(x_{k+1}) - \nabla f(x_k) \;=\; \nabla^2 f(x_{k+1})\,s_k + o(\|s_k\|).
+$$
+
+Es decir, **$\nabla^2 f(x_{k+1})\,s_k \approx y_k$**.
+
+<Why>
+La aproximación dice: la Hessiana en $x_{k+1}$ aplicada a la dirección de
+movimiento $s_k$ produce (a primer orden) el incremento $y_k$ del gradiente.
+Es la única información de segunda orden que el paso nos regaló.
+</Why>
+</Step>
+
+<Step n={3} title="Imponer la condición secante en D_{k+1}">
+Si $D_{k+1} \approx (\nabla^2 f(x_{k+1}))^{-1}$, queremos que **invierta**
+la relación anterior:
+
+$$
+D_{k+1}\,y_k \;=\; s_k.
+$$
+
+<Why>
+Aplicar $D_{k+1}$ a $y_k$ y obtener $s_k$ es exactamente "deshacer" la acción
+de la Hessiana sobre $s_k$. Esa única ecuación lineal vectorial fija $n$
+condiciones escalares sobre las $n^2$ entradas de $D_{k+1}$: queda mucha
+libertad, que se usa para imponer simetría y positividad. La condición
+secante es el corazón de cualquier método cuasi-Newton (BFGS, DFP,
+SR1, etc.).
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (b): BFGS satisface la secante
+
+### Intuición
+
+La fórmula BFGS parece complicada pero está armada justo para que
+$D_{k+1}\,y_k = s_k$ salga sin esfuerzo. La clave es que el **factor**
+$I - \tfrac{y_k s_k^{\top}}{y_k^{\top} s_k}$, aplicado a $y_k$, da cero:
+ese factor "anula" a $y_k$ por construcción. Lo que sobrevive es solo el
+término $\rho_k\,s_k s_k^{\top}$ aplicado a $y_k$, que da $s_k$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Mostrar (I − y_k s_k^T / y_k^T s_k) y_k = 0">
+Aplicamos:
+
+$$
+\Big(I - \tfrac{y_k s_k^{\top}}{y_k^{\top} s_k}\Big)\,y_k \;=\; y_k - \tfrac{y_k\,(s_k^{\top} y_k)}{y_k^{\top} s_k}.
+$$
+
+Como $s_k^{\top} y_k = y_k^{\top} s_k$ es un escalar, se cancela:
+
+$$
+\;=\; y_k - y_k \;=\; \mathbf{0}.
+$$
+
+<Why>
+El truco está en reconocer $uv^{\top}$ como **producto exterior**: aplicarlo
+a un vector $w$ da $u\,(v^{\top} w)$, donde $v^{\top} w$ es un número.
+Por eso $(y_k s_k^{\top})\,y_k = y_k\,(s_k^{\top} y_k)$, y el factor lateral
+$y_k^{\top} s_k$ del denominador lo neutraliza exactamente.
+</Why>
+</Step>
+
+<Step n={2} title="Aplicar BFGS a y_k">
+Recordá la actualización BFGS con $\rho_k = 1/(y_k^{\top} s_k)$:
+
+$$
+D_{k+1} \;=\; \underbrace{\big(I - \rho_k\,s_k y_k^{\top}\big)\,D_k\,\big(I - \rho_k\,y_k s_k^{\top}\big)}_{(\star)} \;+\; \rho_k\,s_k s_k^{\top}.
+$$
+
+Aplicamos $D_{k+1}$ a $y_k$. En $(\star)$ el factor de la derecha actúa
+primero sobre $y_k$, y por el paso 1 (notando que $\rho_k\,y_k s_k^{\top} = y_k s_k^{\top}/(y_k^{\top} s_k)$):
+
+$$
+(I - \rho_k\,y_k s_k^{\top})\,y_k \;=\; y_k - \rho_k\,y_k\,(s_k^{\top} y_k) \;=\; y_k - y_k \;=\; \mathbf{0}.
+$$
+
+Por lo tanto $(\star)\,y_k = (I - \rho_k\,s_k y_k^{\top})\,D_k\,\mathbf{0} = \mathbf{0}$.
+
+<Why>
+Esta es la observación central: el factor derecho aniquila $y_k$, así que
+$(\star)\,y_k = \mathbf{0}$ y todo el peso se va al término de rango 1
+$\rho_k\,s_k s_k^{\top}$.
+</Why>
+</Step>
+
+<Step n={3} title="Conclusión: D_{k+1} y_k = s_k">
+Como $(\star)\,y_k = \mathbf{0}$:
+
+$$
+D_{k+1}\,y_k \;=\; \rho_k\,s_k s_k^{\top}\,y_k \;=\; \tfrac{s_k\,(s_k^{\top} y_k)}{y_k^{\top} s_k} \;=\; s_k.
+$$
+
+<Why>
+El término $\rho_k\,s_k s_k^{\top}$ es el "diseño" de BFGS: aplicado a $y_k$
+produce $s_k$, satisfaciendo la condición secante. El resto de la fórmula
+($\star$) es la **proyección** que empuja $D_k$ a la mejor aproximación
+posible compatible con la nueva información, sin afectar lo que pasa
+sobre $y_k$.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (c): iteración explícita BFGS
+
+### Intuición
+
+Es solo combinar las piezas: gradiente, dirección, paso, actualización.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Calcular dirección y paso">
+Dados $x_k$ y $D_k \succ 0$:
+
+$$
+g_k \;=\; \nabla f(x_k), \qquad d_k \;=\; -D_k\,g_k.
+$$
+
+Elegir $\alpha_k > 0$ por una búsqueda lineal (idealmente Wolfe, así se
+garantiza la condición de curvatura del paso (d)).
+
+$$
+x_{k+1} \;=\; x_k + \alpha_k\,d_k.
+$$
+
+<Why>
+$d_k$ es **descenso** porque $g_k^{\top} d_k = -g_k^{\top} D_k g_k < 0$
+(por $D_k \succ 0$). Wolfe asegura: descenso suficiente (Armijo) y
+curvatura. Sin la curvatura, $y_k^{\top} s_k$ podría no ser positivo
+y BFGS quedaría indefinido.
+</Why>
+</Step>
+
+<Step n={2} title="Calcular s_k, y_k, ρ_k">
+$$
+s_k \;=\; x_{k+1} - x_k \;=\; \alpha_k\,d_k, \qquad y_k \;=\; \nabla f(x_{k+1}) - \nabla f(x_k).
+$$
+
+Si $y_k^{\top} s_k > 0$, definir $\rho_k = 1/(y_k^{\top} s_k)$.
+
+<Why>
+Estos son los datos que el paso ya generó. Si la línea search fue Wolfe,
+$y_k^{\top} s_k > 0$ está garantizado por el paso (d).
+</Why>
+</Step>
+
+<Step n={3} title="Actualizar D_{k+1}">
+$$
+D_{k+1} \;=\; \big(I - \rho_k\,s_k y_k^{\top}\big)\,D_k\,\big(I - \rho_k\,y_k s_k^{\top}\big) + \rho_k\,s_k s_k^{\top}.
+$$
+
+Avanzar $k \to k+1$.
+
+<Why>
+La actualización es de **rango 2** y se calcula en $O(n^2)$ flops, no
+$O(n^3)$ (no hay que invertir nada). Eso hace que BFGS escale a problemas
+grandes (y L-BFGS escala todavía más, guardando solo los últimos $m$
+pares $(s, y)$ sin formar $D$ explícita).
+</Why>
+</Step>
+</Proof>
+
+<BFGSTrajectoryDemo />
+
+En cuadráticas con búsqueda lineal exacta, BFGS converge en $n$ pasos
+(propiedad de **terminación finita**). En no cuadráticas suele converger
+**superlinealmente**, conservando la mayoría de las ventajas de Newton sin
+calcular Hessianas.
+
+---
+
+## Parte (d): la condición de curvatura
+
+### Intuición
+
+La condición $\nabla f(x_k)^{\top} d_k < \nabla f(x_{k+1})^{\top} d_k$ dice
+que la pendiente de $f$ en la dirección $d_k$ **aumentó** al avanzar a
+$x_{k+1}$ (era negativa, ahora menos negativa o ya positiva). Esto pasa
+naturalmente si $\alpha_k$ es lo suficientemente grande como para "escapar"
+del valle inicial. Multiplicado por $\alpha_k > 0$, ese cambio de pendiente
+se traduce en $y_k^{\top} s_k > 0$.
+
+<CurvatureConditionDemo />
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Reescribir como producto interno">
+Como $s_k = \alpha_k\,d_k$:
+
+$$
+y_k^{\top} s_k \;=\; (\nabla f(x_{k+1}) - \nabla f(x_k))^{\top}\,(\alpha_k\,d_k) \;=\; \alpha_k\,\big(\nabla f(x_{k+1})^{\top} d_k - \nabla f(x_k)^{\top} d_k\big).
+$$
+
+<Why>
+Truco estándar: empujar $\alpha_k$ adentro y reagrupar. Lo que queda dentro
+del paréntesis es exactamente la diferencia que aparece en la hipótesis.
+</Why>
+</Step>
+
+<Step n={2} title="Usar la hipótesis">
+Por la hipótesis $\nabla f(x_k)^{\top} d_k < \nabla f(x_{k+1})^{\top} d_k$,
+el paréntesis es estrictamente positivo. Como $\alpha_k > 0$:
+
+$$
+y_k^{\top} s_k \;=\; \alpha_k \cdot (\text{positivo}) \;>\; 0.
+$$
+
+<Why>
+Listo. El crecimiento de la pendiente en la dirección $d_k$ se traduce
+exactamente en $y_k^{\top} s_k > 0$. Por eso las condiciones de Wolfe se
+diseñan para producir esto: garantizan que BFGS sea aplicable.
+</Why>
+</Step>
+
+<Step n={3} title="Por qué Wolfe lo asegura">
+La condición de curvatura de Wolfe pide
+$\nabla f(x_{k+1})^{\top} d_k \geq c_2\,\nabla f(x_k)^{\top} d_k$ con
+$c_2 \in (0, 1)$. Como $\nabla f(x_k)^{\top} d_k < 0$ (descenso),
+$c_2 \cdot (\text{negativo})$ es **menos negativo** que $\nabla f(x_k)^{\top} d_k$,
+y por lo tanto $\nabla f(x_{k+1})^{\top} d_k > \nabla f(x_k)^{\top} d_k$.
+
+<Why>
+La constante $c_2$ típicamente se elige en $[0.1, 0.9]$. Cuanto más chica,
+más estricta la condición. La curvatura de Wolfe siempre se puede satisfacer
+en problemas razonables (gradiente Lipschitz acotado por debajo) y por eso
+es la línea-search recomendada para BFGS.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (e): preservación de definida-positiva
+
+### Intuición
+
+Querés que $D_{k+1} \succ 0$ para que la próxima dirección $d_{k+1} = -D_{k+1}\,g_{k+1}$
+sea de descenso. La estrategia: tomar $z \neq \mathbf{0}$ y mostrar que
+$z^{\top} D_{k+1}\,z > 0$, separando en los dos sumandos de la fórmula.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Setup">
+Sea $z \in \mathbb{R}^n \setminus \{\mathbf{0}\}$. Llamemos
+$M = I - \rho_k\,y_k s_k^{\top}$ (la matriz de la derecha en el primer
+sumando, transpuesta de la izquierda). Entonces:
+
+$$
+z^{\top} D_{k+1}\,z \;=\; z^{\top}\,M^{\top}\,D_k\,M\,z \;+\; \rho_k\,(z^{\top} s_k)^2.
+$$
+
+Llamemos $w = M\,z$. Queda:
+
+$$
+z^{\top} D_{k+1}\,z \;=\; w^{\top} D_k\,w \;+\; \rho_k\,(z^{\top} s_k)^2.
+$$
+
+<Why>
+La fórmula tiene la forma $A^{\top} D_k A + (\text{rango 1 SDP})$ con
+$A = (I - \rho_k\,y_k s_k^{\top})$. Llamando $w = Az$, el primer sumando
+queda $w^{\top} D_k w$, que es no negativo por $D_k \succ 0$.
+</Why>
+</Step>
+
+<Step n={2} title="Cada sumando es ≥ 0">
+- $w^{\top} D_k\,w \geq 0$ porque $D_k \succ 0$, con igualdad solo si $w = \mathbf{0}$.
+- $\rho_k\,(z^{\top} s_k)^2 \geq 0$ porque $\rho_k > 0$ (paso (d)),
+  con igualdad solo si $z^{\top} s_k = 0$.
+
+Por lo tanto $z^{\top} D_{k+1}\,z \geq 0$.
+
+<Why>
+La descomposición divide la información: el primer sumando preserva la
+positividad heredada de $D_k$ "en la mayoría del espacio"; el segundo
+sumando aporta positividad **a lo largo de $s_k$**. La pregunta es si
+juntos llenan todo el espacio.
+</Why>
+</Step>
+
+<Step n={3} title="Si la suma es cero, z = 0">
+Supongamos $z^{\top} D_{k+1}\,z = 0$. Entonces ambos sumandos son cero:
+
+1. $w^{\top} D_k\,w = 0 \Rightarrow w = \mathbf{0}$ (porque $D_k \succ 0$).
+2. $z^{\top} s_k = 0$.
+
+Si $z^{\top} s_k = 0$, entonces $M\,z = z - \rho_k\,y_k\,(s_k^{\top} z) = z$.
+Pero también $w = Mz = \mathbf{0}$, así que $z = \mathbf{0}$.
+
+<Why>
+Justo lo que define la sugerencia: la matriz $M = I - \rho_k\,y_k s_k^{\top}$
+**actúa como la identidad sobre el subespacio ortogonal a $s_k$**. Si
+$z \perp s_k$, entonces $Mz = z$. Combinando con $Mz = 0$, eso fuerza $z = 0$.
+La gracia es que el primer sumando "cubre" el ortogonal a $s_k$ (ahí $M = I$
+y se ve directo $D_k$); el segundo sumando, $\rho_k\,(z^{\top} s_k)^2$,
+cubre la dirección $s_k$.
+</Why>
+</Step>
+
+<Step n={4} title="Conclusión">
+$z^{\top} D_{k+1}\,z = 0 \Rightarrow z = \mathbf{0}$, así que $D_{k+1} \succ 0$.
+
+<Why>
+La actualización BFGS preserva la definida-positiva siempre que
+$y_k^{\top} s_k > 0$ (parte d) y $D_k \succ 0$. Como $D_0 = I \succ 0$ y la
+recurrencia preserva la propiedad, **toda la sucesión $D_k$ es SDP**.
+Eso garantiza que cada $d_k$ sea de descenso y que la búsqueda lineal
+tenga sentido.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Errores típicos
+
+<Warning>
+- **Calcular la Hessiana**: la gracia es no hacerlo. La fórmula BFGS solo
+  necesita $s_k$, $y_k$ y $D_k$.
+- **Usar $\alpha_k = 1$ siempre**: solo es razonable cerca del óptimo, donde
+  Newton/BFGS son cuadráticos. Lejos puede no satisfacer Armijo y BFGS
+  diverge. Hacer **siempre** búsqueda lineal (Wolfe).
+- **Olvidar la condición de curvatura**: si $y_k^{\top} s_k \leq 0$, BFGS
+  pierde positividad. Saltearse el paso o forzar damping (BFGS amortiguado).
+- **Confundir $D_k$ con la Hessiana**: $D_k$ aproxima la **inversa** de la
+  Hessiana, no la Hessiana. Por eso $d_k = -D_k\,g_k$ y no $-D_k^{-1}\,g_k$.
+- **Pretender que $D_k \to (\nabla^2 f(x^*))^{-1}$**: en general no converge
+  a la Hessiana inversa; converge a algo "lo bastante bueno" en las
+  direcciones que importan. La convergencia superlineal se debe al
+  comportamiento direccional, no a la convergencia matricial.
+- **Usar BFGS sin re-iniciar**: en problemas mal condicionados o con cambios
+  bruscos, conviene re-iniciar $D_k = I$ cada cierto número de iteraciones.
+- **L-BFGS implementa una forma distinta**: no guarda $D$, guarda los
+  últimos $m$ pares $(s, y)$ y reconstruye la acción de $D_k$ on-the-fly.
+  La fórmula BFGS estándar es para análisis y problemas pequeños/medianos.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿Por qué la condición secante D_{k+1} y_k = s_k es la generalización natural de la idea Newton?"
+>
+Newton resuelve $\nabla^2 f(x_{k+1})\,(\Delta x) = -\nabla f(x_{k+1})$ exactamente.
+Cuasi-Newton no tiene la Hessiana, pero sabe que **a primer orden**
+$\nabla^2 f(x_{k+1})\,s_k \approx y_k$. Pedir que $D_{k+1}$ invierta esa
+relación ($D_{k+1}\,y_k = s_k$) es la única información de segundo orden
+disponible. El resto de la matriz queda libre y se decide por simetría +
+positividad + mínima distancia a $D_k$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="En 1D, ¿cuánto vale D_{k+1} y qué método se obtiene?"
+>
+$D_{k+1} = s_k/y_k = (x_{k+1} - x_k)/(f'(x_{k+1}) - f'(x_k))$. Es la
+recíproca de la pendiente de la **secante** al gráfico de $f'$. La iteración
+$x_{k+1} = x_k - D_k\,f'(x_k)$ es exactamente el **método de la secante**
+para resolver $f'(x) = 0$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Por qué la fórmula BFGS satisface la condición secante 'sin esfuerzo'?"
+>
+Porque el factor $(I - \rho_k\,y_k s_k^{\top})$ aplicado a $y_k$ da
+$\mathbf{0}$ (los escalares $s_k^{\top} y_k$ del numerador y $y_k^{\top} s_k$
+del denominador se cancelan). Eso anula todo el primer sumando al actuar
+sobre $y_k$, dejando solo $\rho_k\,s_k s_k^{\top}\,y_k = s_k$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="¿Qué garantiza que la sucesión D_k sea siempre definida positiva?"
+>
+Inducción. $D_0 = I \succ 0$. En cada paso, si $D_k \succ 0$ y
+$y_k^{\top} s_k > 0$ (asegurada por la condición de curvatura del line
+search), la fórmula BFGS preserva $\succ 0$. La línea Wolfe da el
+$y_k^{\top} s_k > 0$ automáticamente.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Cuál es el costo computacional de BFGS por iteración (en n)?"
+>
+$O(n^2)$ para la actualización (productos exteriores y matriz por vector).
+Newton estándar es $O(n^3)$ por la inversión de Hessiana o solver lineal.
+La diferencia hace BFGS práctico hasta $n \sim 10^3$–$10^4$. L-BFGS
+baja a $O(n m)$ con $m$ memoria fija y escala a $n \sim 10^9$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={6}
+  question="¿Qué propiedad especial tiene BFGS sobre cuadráticas?"
+>
+**Terminación finita**: con búsqueda lineal exacta, BFGS converge en a lo
+sumo $n$ iteraciones para una cuadrática estrictamente convexa. Es porque
+las direcciones generadas son conjugadas respecto a $Q$ (relacionado con
+el método de gradientes conjugados). Sirve como sanity check de la
+implementación.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**Newton.** $x_{k+1} = x_k - (\nabla^2 f(x_k))^{-1}\,\nabla f(x_k)$. Cuadrático cerca de $x^*$, caro.
+
+**Cuasi-Newton.** $d_k = -D_k\,\nabla f(x_k)$, $x_{k+1} = x_k + \alpha_k\,d_k$. $D_k$ aproxima $(\nabla^2 f)^{-1}$.
+
+**Condición secante.** $D_{k+1}\,y_k = s_k$, donde $s_k = x_{k+1} - x_k$, $y_k = \nabla f(x_{k+1}) - \nabla f(x_k)$. Motivada por Taylor: $\nabla^2 f(x_{k+1})\,s_k \approx y_k$.
+
+**Fórmula BFGS.** Con $\rho_k = 1/(y_k^{\top} s_k)$:
+$$
+D_{k+1} = (I - \rho_k\,s_k y_k^{\top})\,D_k\,(I - \rho_k\,y_k s_k^{\top}) + \rho_k\,s_k s_k^{\top}.
+$$
+
+**Por qué satisface secante.** $(I - \rho_k\,y_k s_k^{\top})\,y_k = \mathbf{0}$ (ese factor anula $y_k$); queda $\rho_k\,s_k s_k^{\top}\,y_k = s_k$.
+
+**Curvatura.** $y_k^{\top} s_k > 0 \Leftrightarrow \nabla f(x_k)^{\top} d_k < \nabla f(x_{k+1})^{\top} d_k$. Lo asegura la condición de Wolfe.
+
+**Positividad.** $D_k \succ 0$ y $y_k^{\top} s_k > 0 \Rightarrow D_{k+1} \succ 0$. Inducción desde $D_0 = I$.
+
+**Costo.** $O(n^2)$ por iteración. Cuadráticas: termina en ≤ $n$ pasos. No cuadráticas: convergencia superlineal.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p2-ej5" />
