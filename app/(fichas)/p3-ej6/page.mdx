@@ -1,0 +1,537 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { SoftThresholdingDemo } from "./_components/SoftThresholdingDemo";
+import { LASSOPathDemo } from "./_components/LASSOPathDemo";
+import { ADMMConvergenceDemo } from "./_components/ADMMConvergenceDemo";
+
+export const metadata = {
+  title: "P3-Ej6: ADMM y LASSO (soft-thresholding)",
+  description:
+    "Lagrangianos aumentados, método ADMM y aplicación a LASSO: derivación de la iteración con x-update tipo Tikhonov y z-update por soft-thresholding.",
+};
+
+<FichaHeader
+  practico={3}
+  ejercicio={6}
+  title="ADMM y LASSO (soft-thresholding)"
+  estimated_minutes={90}
+/>
+
+## Motivación
+
+Muchos problemas de machine learning tienen la forma
+
+$$
+\min_x f(x) + g(x),
+$$
+
+donde $f$ y $g$ son **convexas pero "incompatibles"** (no se pueden tratar
+juntas eficientemente, pero cada una por separado sí). Ejemplos:
+
+- **LASSO**: $f(x) = \tfrac12\|Ax - b\|^2$ (cuadrática, suave) y $g(x) = \lambda\|x\|_1$
+  (no diferenciable pero separable por coordenadas).
+- **Logistic + L1**, **dictionary learning**, **total variation**, etc.
+
+ADMM resuelve estos problemas **alternando** una optimización en $x$ (con
+sólo $f$) y otra en $z$ (con sólo $g$), conectándolas por un multiplicador
+y un término cuadrático que las tira juntas.
+
+<SoftThresholdingDemo />
+
+La pieza explícita de ADMM en LASSO es el **soft-thresholding**: una
+función no lineal que "achica" la entrada y manda a 0 cualquier valor
+en una zona muerta. Esa zona muerta es **exactamente** el origen de la
+sparsidad de LASSO.
+
+## Definiciones y herramientas
+
+<Definition title="Lagrangiano aumentado">
+Para $\min f(x) + g(z)$ s.t. $x = z$ y $\rho > 0$:
+$$
+\mathcal{L}_\rho(x, z, \mu) \;=\; f(x) + g(z) + \langle \mu, x - z\rangle + \tfrac{\rho}{2}\|x - z\|^2.
+$$
+El término $\tfrac\rho2\|x-z\|^2$ no cambia el problema (es 0 en el óptimo)
+pero mejora la regularidad del Lagrangiano.
+</Definition>
+
+<Definition title="Iteración ADMM (forma escalada)">
+Con $u^k = \tfrac1\rho \mu^k$:
+$$
+x^{k+1} = \arg\min_x \big\{f(x) + \tfrac\rho2\|x - z^k + u^k\|^2\big\},
+$$
+$$
+z^{k+1} = \arg\min_z \big\{g(z) + \tfrac\rho2\|x^{k+1} - z + u^k\|^2\big\},
+$$
+$$
+u^{k+1} = u^k + x^{k+1} - z^{k+1}.
+$$
+</Definition>
+
+<Definition title="Soft-thresholding">
+Para $\kappa > 0$ y $w \in \mathbb{R}$:
+$$
+\text{soft}_\kappa(w) \;=\; \begin{cases} w - \kappa & w > \kappa \\ 0 & |w| \leq \kappa \\ w + \kappa & w < -\kappa \end{cases} \;=\; \arg\min_t \big\{\kappa|t| + \tfrac12(t - w)^2\big\}.
+$$
+Vector: aplicar coordenada por coordenada.
+</Definition>
+
+## Enunciado
+
+Sea $\min_x f(x) + g(x)$ con $f, g : \mathbb{R}^n \to \mathbb{R}$ convexas.
+
+- **(a)** Reescribir con variable auxiliar $z$ y restricción $x = z$.
+  Escribir el Lagrangiano.
+- **(b)** Justificar el Lagrangiano aumentado y derivar las iteraciones
+  ADMM en su forma escalada.
+- **(c)** Aplicar al LASSO: reescribir, plantear el Lagrangiano aumentado
+  y escribir las iteraciones.
+- **(d)** Mostrar que el x-subproblema en LASSO da
+  $(A^{\top}A + \rho I)\,x^{k+1} = A^{\top}b + \rho(z^k - u^k)$.
+- **(e)** Mostrar que el z-subproblema se separa por coordenada y se
+  resuelve con soft-thresholding: $z^{k+1}_i = \text{soft}_{\lambda/\rho}(x^{k+1}_i + u^k_i)$.
+
+---
+
+## Parte (a): reescritura con variable auxiliar
+
+### Intuición
+
+Reescribir $\min f(x) + g(x)$ como $\min f(x) + g(z)$ s.t. $x = z$ parece
+ridículo: estamos duplicando la variable. Pero **separa** la dependencia
+de $f$ y $g$, así que cada una se puede atacar individualmente. La
+restricción $x = z$ se relaja con un multiplicador y se va satisfaciendo
+en el límite.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Reformular con z auxiliar">
+$$
+\min_x f(x) + g(x) \;\Longleftrightarrow\; \min_{x, z} f(x) + g(z) \quad \text{s.t. } x = z.
+$$
+
+<Why>
+La equivalencia es directa: cualquier $x$ factible para el primer problema
+da $(x, x)$ factible para el segundo con el mismo valor objetivo, y
+viceversa. La gracia es que ahora $f$ y $g$ están en argumentos distintos:
+podemos optimizar en $x$ con solo $f$ (más la restricción) y en $z$ con
+solo $g$.
+</Why>
+</Step>
+
+<Step n={2} title="Lagrangiano (sin aumentar)">
+Multiplicador $\mu \in \mathbb{R}^n$ para la igualdad $x - z = 0$:
+$$
+L(x, z, \mu) \;=\; f(x) + g(z) + \langle \mu,\, x - z\rangle.
+$$
+
+<Why>
+Es el Lagrangiano estándar: objetivo + multiplicador por la restricción.
+Si $f$ o $g$ son no diferenciables (como $g(z) = \|z\|_1$), este
+Lagrangiano clásico **no es estrictamente convexo** en $(x, z)$, y la
+minimización alterna no necesariamente converge. La parte (b) repara eso.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (b): Lagrangiano aumentado y ADMM
+
+### Intuición
+
+Agregar $\tfrac\rho2\|x - z\|^2$ al Lagrangiano **no cambia el problema**
+(en el óptimo $x = z$, así que el término es 0), pero hace que cada
+subproblema en $x$ y en $z$ sea **estrictamente convexo**, por lo tanto
+con mínimo único y bien definido. Con eso, alternar minimizaciones tiene
+sentido: cada paso reduce un objetivo bien definido.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Justificar el término cuadrático">
+$\mathcal{L}_\rho(x, z, \mu) = f(x) + g(z) + \langle \mu, x - z\rangle + \tfrac\rho2\|x - z\|^2$.
+
+Sobre la región factible $x = z$, el término extra es 0, así que
+$\mathcal{L}_\rho$ y $L$ tienen el mismo óptimo. Pero para $x \neq z$,
+el término cuadrático **penaliza** la violación de la restricción y
+proporciona convexidad estricta a cada subproblema:
+- $\mathcal{L}_\rho(\cdot, z, \mu)$ es estrictamente convexa en $x$
+  (porque $\rho I \succ 0$), aún si $f$ es solo convexa.
+- Análogo para $z$.
+
+<Why>
+Es una idea estándar: el penalty cuadrático *Tikhonov-iza* el problema y
+mejora propiedades sin cambiar la solución. Al mismo tiempo, no requiere
+$\rho$ grande (a diferencia del método de penalización, donde $\rho \to \infty$):
+$\rho$ se queda fijo y la convergencia se logra con la actualización del
+multiplicador.
+</Why>
+</Step>
+
+<Step n={2} title="Derivar el x-update">
+$\arg\min_x \mathcal{L}_\rho(x, z^k, \mu^k) = \arg\min_x \{f(x) + \langle \mu^k, x\rangle + \tfrac\rho2\|x - z^k\|^2\}$.
+
+Completando cuadrados (poniendo $u^k = \mu^k/\rho$ para simplificar):
+$$
+\langle \mu^k, x\rangle + \tfrac\rho2\|x - z^k\|^2 \;=\; \tfrac\rho2\|x - z^k + u^k\|^2 \;-\; \tfrac\rho2\|u^k\|^2 \;-\; \tfrac\rho2\|z^k\|^2 + \ldots
+$$
+
+(constantes en $x$ que se descartan al minimizar). Conclusión:
+$$
+\boxed{\; x^{k+1} \;=\; \arg\min_x\; f(x) + \tfrac\rho2\|x - z^k + u^k\|^2.\;}
+$$
+
+<Why>
+La forma "escalada" $u = \mu/\rho$ es estándar: empuja el multiplicador
+adentro del cuadrado. Geometricamente: el x-update minimiza $f$ con un
+término de proximidad al "objetivo trasladado" $z^k - u^k$. Es un
+**operador proximal**.
+</Why>
+</Step>
+
+<Step n={3} title="Derivar el z-update y el u-update">
+Análogamente, $\arg\min_z \mathcal{L}_\rho(x^{k+1}, z, \mu^k)$ resulta
+$$
+\boxed{\; z^{k+1} \;=\; \arg\min_z\; g(z) + \tfrac\rho2\|x^{k+1} - z + u^k\|^2.\;}
+$$
+
+Y la actualización del multiplicador (subgradiente sobre la dual):
+$$
+\mu^{k+1} = \mu^k + \rho(x^{k+1} - z^{k+1}) \;\Longleftrightarrow\; u^{k+1} = u^k + x^{k+1} - z^{k+1}.
+$$
+
+<Why>
+Cada subproblema se ataca por separado, usando la estructura de $f$ o $g$.
+La actualización de $u$ es un **paso de subida en el dual** con paso $\rho$:
+si $x \neq z$, el multiplicador aumenta para penalizar más esa violación
+en la próxima iteración. La elección $\alpha = \rho$ para el paso dual
+es la que garantiza convergencia (otras elecciones requieren ajustes).
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (c): aplicar a LASSO
+
+### Intuición
+
+Para LASSO, $f(x) = \tfrac12\|Ax - b\|^2$ y $g(z) = \lambda\|z\|_1$.
+Cada una es "fácil por sí sola": $f$ es cuadrática (resoluble por
+ecuación normal) y $g$ es separable por coordenada (resoluble en cerrado).
+El "matrimonio" es lo que ADMM hace.
+
+<LASSOPathDemo />
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Reformulación de LASSO">
+$$
+\min_{x, z} \tfrac12\|Ax - b\|^2 + \lambda\|z\|_1 \quad \text{s.t. } x = z.
+$$
+
+Lagrangiano aumentado (escalado):
+$$
+\mathcal{L}_\rho(x, z, u) \;=\; \tfrac12\|Ax - b\|^2 + \lambda\|z\|_1 + \tfrac\rho2\|x - z + u\|^2 - \tfrac\rho2\|u\|^2.
+$$
+
+<Why>
+La forma escalada absorbe el multiplicador en el cuadrado. La constante
+$-\tfrac\rho2\|u\|^2$ no afecta los argmin pero sirve para reconciliar
+con la forma no escalada en pruebas teóricas.
+</Why>
+</Step>
+
+<Step n={2} title="Iteraciones ADMM en LASSO">
+$$
+x^{k+1} = \arg\min_x \tfrac12\|Ax - b\|^2 + \tfrac\rho2\|x - z^k + u^k\|^2,
+$$
+$$
+z^{k+1} = \arg\min_z \lambda\|z\|_1 + \tfrac\rho2\|x^{k+1} - z + u^k\|^2,
+$$
+$$
+u^{k+1} = u^k + x^{k+1} - z^{k+1}.
+$$
+
+<Why>
+La estructura está expuesta: el x-update es **regresión Tikhonov**
+(cuadrática + cuadrática), el z-update es **soft-thresholding por
+coordenada** (parte e). Cada uno se resuelve en cerrado.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (d): el x-subproblema es cuadrático
+
+### Intuición
+
+Como $\tfrac12\|Ax - b\|^2 + \tfrac\rho2\|x - z + u\|^2$ es estrictamente
+convexa en $x$, su mínimo se obtiene anulando el gradiente: una
+**ecuación normal modificada** $(A^{\top}A + \rho I)x = A^{\top}b + \rho(z - u)$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Calcular el gradiente del x-objetivo">
+$h(x) = \tfrac12\|Ax - b\|^2 + \tfrac\rho2\|x - z^k + u^k\|^2$.
+
+$$
+\nabla h(x) \;=\; A^{\top}(Ax - b) + \rho(x - z^k + u^k) \;=\; (A^{\top}A + \rho I)x - A^{\top}b - \rho(z^k - u^k).
+$$
+
+<Why>
+La derivada de $\tfrac12\|Ax - b\|^2$ es $A^{\top}(Ax - b) = A^{\top}Ax - A^{\top}b$
+(álgebra estándar). El segundo término aporta $\rho(x - z + u)$. Sumando
+y reagrupando, el coeficiente de $x$ es $A^{\top}A + \rho I$.
+</Why>
+</Step>
+
+<Step n={2} title="Anular el gradiente">
+$\nabla h(x^{k+1}) = 0$ da:
+$$
+\boxed{\; (A^{\top}A + \rho I)\,x^{k+1} \;=\; A^{\top}b + \rho(z^k - u^k).\;}
+$$
+
+<Why>
+El sistema tiene matriz $A^{\top}A + \rho I$, que es **siempre simétrica
+definida positiva** porque $\rho > 0$ (incluso si $A^{\top}A$ es singular,
+e.g. en problemas sub-determinados $m < n$). Esa es una **mejora
+incondicional** sobre la ecuación normal estándar.
+</Why>
+</Step>
+
+<Step n={3} title="Eficiencia: factorización compartida">
+$A^{\top}A + \rho I$ no cambia entre iteraciones. Su factorización
+(Cholesky o equivalente) **se hace una sola vez**, y cada $x^{k+1}$
+requiere solo dos triangular solves: $O(n^2)$ por iteración (después
+del costo inicial $O(n^3)$ de la factorización).
+
+<Why>
+Es uno de los grandes atractivos de ADMM para LASSO: el x-update tiene
+**costo amortizado bajo**. En problemas grandes ($n \sim 10^5$) con $A$
+densa, la factorización dura, pero cada iteración después es barata.
+Para $A$ sparse o estructurada, hay variantes aún más rápidas.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (e): el z-subproblema es soft-thresholding
+
+### Intuición
+
+$z$-objetivo: $\lambda\|z\|_1 + \tfrac\rho2\|x - z + u\|^2$. La norma $\ell_1$
+**es separable**: $\|z\|_1 = \sum |z_i|$. La norma $\ell_2^2$ también:
+$\sum (x_i - z_i + u_i)^2/2$. Por lo tanto el problema se desacopla por
+coordenada y se reduce a $n$ minimizaciones unidimensionales.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Separabilidad por coordenada">
+Sea $w = x^{k+1} + u^k$. El z-subproblema es
+$$
+z^{k+1} = \arg\min_z \sum_i \big[\lambda |z_i| + \tfrac\rho2 (z_i - w_i)^2\big].
+$$
+
+Como cada término solo depende de $z_i$, podemos minimizar por separado:
+$$
+z_i^{k+1} = \arg\min_t \big[\lambda |t| + \tfrac\rho2 (t - w_i)^2\big].
+$$
+
+<Why>
+La separabilidad de $\ell_1$ es **el** motivo por el que ADMM funciona
+tan bien en LASSO. Si $g$ no se separara, el z-update sería un problema
+$n$-dimensional en general no resoluble en cerrado.
+</Why>
+</Step>
+
+<Step n={2} title="Resolver el problema 1D φ(t) = λ|t| + (ρ/2)(t − w)²">
+Reescalemos: $\varphi(t) = \kappa|t| + \tfrac12(t - w_i)^2$ con $\kappa = \lambda/\rho$
+(después multiplicaremos por $\rho$, irrelevante para el argmin).
+
+Derivando para $t > 0$: $\varphi'(t) = \kappa + (t - w_i) = 0 \Rightarrow t = w_i - \kappa$
+(válido si $w_i > \kappa$).
+
+Para $t < 0$: $\varphi'(t) = -\kappa + (t - w_i) = 0 \Rightarrow t = w_i + \kappa$
+(válido si $w_i < -\kappa$).
+
+Para $t = 0$: subdiferencial $\partial\varphi(0) = \kappa\,[-1, 1] - w_i$.
+$0 \in \partial\varphi(0)$ ⇔ $|w_i| \leq \kappa$.
+
+Combinando los tres casos:
+$$
+z_i^{k+1} \;=\; \begin{cases} w_i - \lambda/\rho & w_i > \lambda/\rho \\ 0 & |w_i| \leq \lambda/\rho \\ w_i + \lambda/\rho & w_i < -\lambda/\rho \end{cases} \;=\; \text{soft}_{\lambda/\rho}(w_i).
+$$
+
+<Why>
+La aparición del 0 en la zona muerta es lo que produce **sparsidad**:
+cuando $|w_i|$ es chico, $z_i$ se manda a 0 exactamente, no solo a un
+valor pequeño. La derivada izquierda y derecha en 0 difieren por $2\kappa$
+(la "esquina" del valor absoluto), y el subdiferencial cubre ese intervalo,
+permitiendo que el mínimo se quede pegado en 0 mientras la "fuerza
+externa" $-w_i$ no exceda $\kappa$.
+</Why>
+</Step>
+
+<Step n={3} title="Comportamiento al aumentar λ">
+A mayor $\lambda$, mayor $\kappa = \lambda/\rho$, mayor zona muerta. Las
+coordenadas $z_i^{k+1}$ que cumplen $|w_i| \leq \kappa$ se anulan: cuanta
+más regularización, más sparsidad. En el límite $\lambda \to \infty$,
+$\kappa \to \infty$ y todas las coordenadas se anulan: solución cero.
+
+<Why>
+La trayectoria de $x^*(\lambda)$ es lineal a tramos (los "kinks"
+corresponden a coordenadas que entran/salen del soporte). Visualmente
+es el "LASSO path" de la viz: una coordenada con $|b_i|$ chico desaparece
+para $\lambda$ chico, una con $|b_i|$ grande se mantiene activa más
+tiempo. Esa estructura es por qué LASSO se usa para **selección de
+variables**.
+</Why>
+</Step>
+</Proof>
+
+<ADMMConvergenceDemo />
+
+Los residuos primal $\|x - z\|$ y dual $\rho\|z - z^{\text{prev}}\|$
+convergen a 0 en escala log; las cotas teóricas dan $O(1/k)$ en residuo
+y $O(1/k)$ en gap dual. La elección de $\rho$ afecta la velocidad pero
+no el límite.
+
+---
+
+## Errores típicos
+
+<Warning>
+- **Confundir Lagrangiano clásico con aumentado**: el aumentado tiene el
+  $\tfrac\rho2\|x - z\|^2$, que es **clave** para que cada subproblema sea
+  estrictamente convexo. Sin él, ADMM puede no converger en problemas no
+  diferenciables.
+- **Tomar $\rho \to \infty$**: no es la idea de ADMM. $\rho$ se queda
+  fijo (o adapta moderadamente). La convergencia viene del paso dual,
+  no de $\rho$.
+- **Olvidar la actualización de $u$**: el método **no es** simplemente
+  alternar $x, z$. La actualización del multiplicador $u^{k+1} = u^k + x^{k+1} - z^{k+1}$
+  es esencial: sin ella, ADMM no converge al óptimo (queda atrapado).
+- **Pretender que ADMM converge cuadráticamente**: en general converge
+  $O(1/k)$ en gap, $O(1/\sqrt k)$ en residuo (problemas convexos
+  generales). Solo bajo hipótesis fuertes (e.g. fuerte convexidad +
+  Lipschitz) se logra convergencia lineal.
+- **Aplicar la ecuación normal $A^{\top}Ax = A^{\top}b$ en lugar de
+  $(A^{\top}A + \rho I)x = A^{\top}b + \rho(z - u)$**: el segundo es el
+  correcto en ADMM. La regularización $\rho I$ vuelve siempre invertible
+  el sistema.
+- **Olvidar que el $z$-update solo es separable porque $g = \|z\|_1$ lo
+  es**: para otros $g$ no separables (e.g. $\|z\|_2$, $\|z\|_\infty$),
+  el z-update es un proximal $n$-dimensional, no necesariamente
+  resoluble en cerrado.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿Por qué el x-update de ADMM en LASSO es siempre bien definido?"
+>
+Porque $A^{\top}A + \rho I$ es definida positiva para cualquier $\rho > 0$
+y cualquier $A$ (incluso sub-determinada). El sistema lineal tiene
+solución única. Sin el $\rho I$ (Tikhonov), $A^{\top}A$ podría ser singular
+en problemas con más variables que muestras.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="¿De dónde sale el soft-thresholding?"
+>
+De minimizar coordinada por coordenada
+$\varphi(t) = \kappa|t| + \tfrac12(t - w)^2$. Casos:
+- $w > \kappa$: derivada por la derecha cero en $t = w - \kappa$.
+- $w < -\kappa$: derivada por la izquierda cero en $t = w + \kappa$.
+- $|w| \leq \kappa$: el subdiferencial en 0 contiene 0, así que el mínimo
+  es $t = 0$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Por qué ADMM produce soluciones esparsas para LASSO?"
+>
+Porque el z-update es soft-thresholding, que **manda exactamente a 0**
+las coordenadas con $|w_i| \leq \lambda/\rho$. La esquina del $\ell_1$
+(la no diferenciabilidad en 0) es exactamente lo que permite "quedarse
+pegado" en 0 frente a fuerzas externas chicas. Para más detalle, ver el
+LASSO path de la viz.
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="¿Cómo afecta ρ a la convergencia de ADMM?"
+>
+$\rho$ pequeño: x-update barato, residuo dual baja rápido pero residuo
+primal lento. $\rho$ grande: opuesto. El óptimo depende del problema; a
+menudo se usa una heurística adaptativa que ajusta $\rho$ basándose en
+el cociente de residuos. En el límite, ambas convergen a 0 para cualquier
+$\rho > 0$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Qué papel juega la dualidad en ADMM?"
+>
+$u$ es el multiplicador dual escalado (de la restricción $x = z$). El
+u-update es un paso de **subida en el dual**: $u^{k+1} = u^k + (x^{k+1} - z^{k+1})$.
+ADMM se puede leer como un método primal-dual: alterna minimización
+primal (en $x$ y en $z$) con un paso dual.
+</ControlQuestion>
+
+<ControlQuestion
+  n={6}
+  question="¿Cuándo no es práctico aplicar ADMM?"
+>
+Cuando alguno de los subproblemas $\arg\min$ no es resoluble eficientemente.
+Si el x-subproblema requiere optimización iterativa interna costosa, o
+si el z-subproblema no es separable y no tiene proximal en cerrado, ADMM
+pierde su atractivo computacional. En esos casos, métodos primal-dual
+más generales (Chambolle-Pock, FISTA con restart, etc.) pueden ser
+preferibles.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**Problema split.** $\min f(x) + g(x) \Leftrightarrow \min f(x) + g(z)$ s.t. $x = z$.
+
+**Lagrangiano aumentado (escalado).** $\mathcal{L}_\rho(x, z, u) = f(x) + g(z) + \tfrac\rho2\|x - z + u\|^2 - \tfrac\rho2\|u\|^2$.
+
+**Iteración ADMM.**
+$$
+x^{k+1} = \arg\min_x f(x) + \tfrac\rho2\|x - z^k + u^k\|^2,
+$$
+$$
+z^{k+1} = \arg\min_z g(z) + \tfrac\rho2\|x^{k+1} - z + u^k\|^2,
+$$
+$$
+u^{k+1} = u^k + x^{k+1} - z^{k+1}.
+$$
+
+**LASSO x-update.** $(A^{\top}A + \rho I)\,x^{k+1} = A^{\top}b + \rho(z^k - u^k)$. Cholesky una vez, $O(n^2)$ por iteración.
+
+**LASSO z-update.** $z^{k+1}_i = \text{soft}_{\lambda/\rho}(x^{k+1}_i + u^k_i)$. Soft-thresholding produce sparsidad.
+
+**Soft-thresholding.** $\text{soft}_\kappa(w) = \text{sgn}(w)\max(|w| - \kappa, 0)$. Zona muerta $[-\kappa, \kappa]$.
+
+**Residuos.** Primal $\|x - z\|$ y dual $\rho\|z - z^{\text{prev}}\|$ → 0. Convergencia $O(1/k)$ en gap.
+
+**Aumentar $\lambda$ ⇒ más sparsidad.** En el límite $\lambda \to \infty$, $x^* = 0$.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p3-ej6" />

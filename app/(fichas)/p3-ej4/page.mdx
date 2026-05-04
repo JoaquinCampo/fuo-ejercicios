@@ -1,0 +1,518 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { ProjectionDescentDemo } from "./_components/ProjectionDescentDemo";
+import { ConstrainedLineSearchDemo } from "./_components/ConstrainedLineSearchDemo";
+import { ArmijoBacktrackingDemo } from "./_components/ArmijoBacktrackingDemo";
+
+export const metadata = {
+  title: "P3-Ej4: Reglas de Armijo y minimización limitada para gradiente proyectado",
+  description:
+    "Convergencia a puntos estacionarios del método de gradiente proyectado bajo distintas reglas de paso: minimización limitada y backtracking de Armijo.",
+};
+
+<FichaHeader
+  practico={3}
+  ejercicio={4}
+  title="Reglas de Armijo y minimización limitada para gradiente proyectado"
+  estimated_minutes={90}
+/>
+
+## Motivación
+
+El gradiente proyectado tiene **dos pasos**: el paso interno $s > 0$ que
+genera la dirección factible, y el paso externo $\alpha^k \in [0, 1]$ que
+decide cuánto avanzar:
+
+$$
+\bar x^k = P_{\mathcal{X}}(x^k - s\,\nabla f(x^k)),\quad d^k = \bar x^k - x^k,\quad x^{k+1} = x^k + \alpha^k\,d^k.
+$$
+
+En P3-Ej3 fijamos $\alpha^k = 1$ (siempre llegar hasta $\bar x^k$) y
+analizamos la cuadrática. Acá $f$ es solo diferenciable y dejamos que
+$\alpha^k$ se elija mediante una **regla**: minimización limitada o
+Armijo. Queremos probar que **todo punto límite de $\{x^k\}$ es estacionario**,
+sin pedir convexidad fuerte ni cuadraticidad.
+
+<ProjectionDescentDemo />
+
+La pieza clave es una desigualdad de descenso **cuantitativa**:
+$\langle \nabla f(x^k),\, d^k\rangle \leq -\tfrac1s\,\|d^k\|^2$. No solo
+$d^k$ es de descenso (ángulo obtuso con $\nabla f$), sino que el ángulo
+está **cuantitativamente** controlado por $\|d^k\|^2$.
+
+## Definiciones y herramientas
+
+<Definition title="Caracterización variacional de la proyección">
+Para $\mathcal{X}$ convexo cerrado y $z \in \mathbb{R}^n$:
+$$
+\langle z - P_{\mathcal{X}}(z),\; x - P_{\mathcal{X}}(z)\rangle \;\leq\; 0 \qquad \forall x \in \mathcal{X}.
+$$
+</Definition>
+
+<Definition title="Punto estacionario (restringido)">
+$\bar x \in \mathcal{X}$ es estacionario para $f$ sobre $\mathcal{X}$ si
+$\bar x = P_{\mathcal{X}}(\bar x - s\,\nabla f(\bar x))$ para algún (o
+equivalentemente, para todo) $s > 0$. Equivalentemente,
+$\langle \nabla f(\bar x), x - \bar x\rangle \geq 0$ para todo $x \in \mathcal{X}$.
+</Definition>
+
+<Definition title="Regla de minimización limitada">
+$$
+\alpha_k \in \arg\min_{\alpha \in [0, 1]} f(x^k + \alpha\,d^k).
+$$
+</Definition>
+
+<Definition title="Regla de Armijo (backtracking)">
+Constantes $\sigma \in (0, 1)$, $\beta \in (0, 1)$. $\alpha^k = \beta^{m_k}$
+donde $m_k$ es el menor entero $\geq 0$ tal que
+$$
+f(x^k + \alpha^k d^k) \;\leq\; f(x^k) + \sigma\,\alpha^k\,\langle \nabla f(x^k), d^k\rangle.
+$$
+</Definition>
+
+## Enunciado
+
+Sea $\mathcal{X} \subset \mathbb{R}^n$ convexo cerrado y $f : \mathcal{X} \to \mathbb{R}$
+diferenciable. Método de gradiente proyectado con $s > 0$ fijo y $\alpha^k$
+posiblemente variable.
+
+- **(a)** Aplicar la propiedad de optimalidad de la proyección a
+  $z = x^k - s\,\nabla f(x^k)$ y deducir
+  $\langle \nabla f(x^k),\, \bar x^k - x^k\rangle \leq -\tfrac1s\,\|\bar x^k - x^k\|^2$.
+- **(b)** Si $x^k \to \bar x \in \mathcal{X}$, usar continuidad de $P_{\mathcal{X}}$
+  para mostrar
+  $\lim_k \langle \nabla f(x^k),\, \bar x^k - x^k\rangle \leq -\tfrac1s\,\|\bar x - P_{\mathcal{X}}(\bar x - s\,\nabla f(\bar x))\|^2$,
+  y deducir que si $\bar x$ no es estacionario, el límite es $< 0$.
+- **(c)** Con minimización limitada en $[0, 1]$, explicar por qué el punto
+  límite debe ser estacionario.
+- **(d)** Lo mismo para Armijo: probar la existencia de $\bar\alpha > 0$
+  uniforme, deducir $\alpha^k \geq \bar\alpha$ para $k$ grande, y concluir
+  por contradicción.
+
+---
+
+## Parte (a): la cota de descenso $\langle \nabla f, d\rangle \leq -\|d\|^2/s$
+
+### Intuición
+
+La caracterización variacional de la proyección dice que el "vector
+residual" $z - P(z)$ apunta lejos del conjunto, y por lo tanto forma
+ángulo obtuso con cualquier dirección factible. Aplicada a $z = x - s\,\nabla f(x)$
+esto se convierte en una cota cuantitativa sobre $\langle \nabla f(x), \bar x - x\rangle$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Aplicar la propiedad de optimalidad">
+Sea $z = x^k - s\,\nabla f(x^k)$. Por la caracterización variacional, con
+$\bar x^k = P_{\mathcal{X}}(z)$ y eligiendo $x = x^k \in \mathcal{X}$:
+$$
+\langle z - \bar x^k,\; x^k - \bar x^k \rangle \;\leq\; 0.
+$$
+
+<Why>
+La caracterización vale para **todo** $x \in \mathcal{X}$. Elegimos
+específicamente $x = x^k$ porque queremos hacer aparecer la diferencia
+$x^k - \bar x^k$, que es $-d^k$. Cualquier elección hubiera funcionado,
+pero esta es la que resuelve el ejercicio.
+</Why>
+</Step>
+
+<Step n={2} title="Sustituir z y reordenar">
+$z - \bar x^k = (x^k - s\,\nabla f(x^k)) - \bar x^k = -d^k - s\,\nabla f(x^k)$,
+con $d^k = \bar x^k - x^k$. Y $x^k - \bar x^k = -d^k$. Entonces:
+$$
+\langle -d^k - s\,\nabla f(x^k),\; -d^k\rangle \;\leq\; 0.
+$$
+
+Distribuyendo:
+$$
+\|d^k\|^2 + s\,\langle \nabla f(x^k),\, d^k\rangle \;\leq\; 0.
+$$
+
+<Why>
+La sustitución es álgebra de signos. La contribución $\|d^k\|^2$ aparece
+del producto $\langle -d^k, -d^k\rangle$, y el otro término sale de
+$\langle -s\,\nabla f, -d^k\rangle = s\,\langle \nabla f, d^k\rangle$.
+</Why>
+</Step>
+
+<Step n={3} title="Despejar para obtener la cota">
+Dividiendo por $s > 0$:
+$$
+\langle \nabla f(x^k),\, d^k\rangle \;\leq\; -\tfrac{1}{s}\,\|d^k\|^2.
+$$
+
+<Why>
+Esta es la **cota de descenso cuantitativa** del enunciado. Dice dos cosas:
+(i) $d^k$ es de descenso (lado derecho $\leq 0$), y (ii) la magnitud del
+descenso es **al menos** $\|d^k\|^2/s$. Esto es lo que después permite
+demostrar progreso uniforme en $f$ y concluir convergencia.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (b): pasaje al límite
+
+### Intuición
+
+Si $x^k \to \bar x$ y $P_{\mathcal{X}}$ es continua, entonces
+$\bar x^k = P_{\mathcal{X}}(x^k - s\,\nabla f(x^k)) \to P_{\mathcal{X}}(\bar x - s\,\nabla f(\bar x))$.
+Pasando al límite en la cota de la parte (a):
+
+$$
+\lim_k \langle \nabla f(x^k),\, \bar x^k - x^k\rangle \;\leq\; -\tfrac1s\,\|\bar x - P_{\mathcal{X}}(\bar x - s\,\nabla f(\bar x))\|^2.
+$$
+
+Si $\bar x$ no es estacionario, el lado derecho es **estrictamente negativo**.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Continuidad de P_X y de ∇f">
+$P_{\mathcal{X}}$ es continua (sale de la no expansividad: P3-Ej3 (a)).
+$\nabla f$ es continua por hipótesis. Como $x^k \to \bar x$:
+$$
+x^k - s\,\nabla f(x^k) \;\to\; \bar x - s\,\nabla f(\bar x), \qquad \bar x^k = P_{\mathcal{X}}(x^k - s\,\nabla f(x^k)) \;\to\; P_{\mathcal{X}}(\bar x - s\,\nabla f(\bar x)).
+$$
+
+<Why>
+Composición de continuas es continua. La no expansividad de $P_{\mathcal{X}}$
+implica $|P(u) - P(v)| \leq |u - v|$, así que $P$ es 1-Lipschitz, en
+particular continua.
+</Why>
+</Step>
+
+<Step n={2} title="Pasar al límite en la cota">
+Llamemos $\bar y = P_{\mathcal{X}}(\bar x - s\,\nabla f(\bar x))$. Entonces
+$\bar x^k - x^k \to \bar y - \bar x$, y por continuidad del producto interno:
+$$
+\langle \nabla f(x^k),\, \bar x^k - x^k\rangle \;\to\; \langle \nabla f(\bar x),\, \bar y - \bar x\rangle.
+$$
+
+Por la parte (a), $\|\bar x^k - x^k\|^2 \to \|\bar y - \bar x\|^2$, y la
+desigualdad pasa al límite:
+$$
+\langle \nabla f(\bar x),\, \bar y - \bar x\rangle \;\leq\; -\tfrac1s\,\|\bar y - \bar x\|^2.
+$$
+
+<Why>
+Las desigualdades **no estrictas** se preservan al pasar al límite (lema
+elemental de análisis: si $a_k \leq b_k$ y $a_k \to a$, $b_k \to b$,
+entonces $a \leq b$). Las estrictas no, pero acá no hace falta.
+</Why>
+</Step>
+
+<Step n={3} title="Si x̄ no es estacionario, el límite es < 0">
+$\bar x$ es estacionario $\Leftrightarrow \bar x = \bar y = P_{\mathcal{X}}(\bar x - s\,\nabla f(\bar x))$.
+Si $\bar x \neq \bar y$, $\|\bar y - \bar x\|^2 > 0$, y por lo tanto:
+$$
+\lim_k \langle \nabla f(x^k),\, \bar x^k - x^k\rangle \;\leq\; -\tfrac1s\,\|\bar y - \bar x\|^2 \;<\; 0.
+$$
+
+<Why>
+Esta es la conclusión clave: la cota cuantitativa del paso (a) **no se
+desinfla** en el límite si $\bar x$ no es punto fijo del operador
+proyectado. Es una expresión cuantitativa de que la "fuerza de descenso"
+$\langle \nabla f, d\rangle$ se mantiene acotada por debajo, abriendo la
+puerta al argumento de progreso uniforme.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (c): minimización limitada implica estacionariedad del límite
+
+### Intuición
+
+Si en cada paso hacemos la minimización óptima en $[0, 1]$, la reducción
+de $f$ es **al menos** $f(x^k) - f(x^k + 1\cdot d^k)$ (porque ese es un
+$\alpha$ candidato). Cuando $\bar x$ no es estacionario, esa diferencia se
+mantiene uniformemente positiva (por la parte (b) más el descenso
+elemental de $f$), y entonces $f(x^k)$ baja arbitrariamente, contradiciendo
+que $f(x^k) \to f(\bar x)$ (continuidad).
+
+<ConstrainedLineSearchDemo />
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Expansión a primer orden de φ(α) = f(x^k + α d^k)">
+Por el teorema fundamental, para $\alpha \in [0, 1]$:
+$$
+f(x^k + \alpha d^k) \;=\; f(x^k) + \alpha\,\langle \nabla f(x^k), d^k\rangle + o(\alpha\,\|d^k\|).
+$$
+
+Para cualquier $\sigma \in (0, 1)$, existe $\bar\alpha \in (0, 1]$ tal que
+para $\alpha \in (0, \bar\alpha]$:
+$$
+f(x^k + \alpha d^k) \;\leq\; f(x^k) + \sigma\,\alpha\,\langle \nabla f(x^k), d^k\rangle.
+$$
+
+<Why>
+Esto es la **descomposición Armijo** elemental. La pendiente de $f$ a lo
+largo de $d^k$ es $\langle \nabla f, d^k\rangle$, negativa por la parte (a).
+El término de orden 1 da una recta de pendiente $\langle \nabla f, d^k\rangle$
+que sale de $f(x^k)$. La curva queda por debajo de cualquier recta de
+pendiente $\sigma$ veces esa, en un entorno chico de 0.
+</Why>
+</Step>
+
+<Step n={2} title="La minimización limitada gana al menos lo que daría α = ᾱ">
+Como $\alpha_k = \arg\min_{[0,1]} f(x^k + \alpha\,d^k)$:
+$$
+f(x^{k+1}) \;=\; f(x^k + \alpha_k d^k) \;\leq\; f(x^k + \bar\alpha\,d^k) \;\leq\; f(x^k) + \sigma\,\bar\alpha\,\langle \nabla f(x^k), d^k\rangle.
+$$
+
+Por la parte (a), $\langle \nabla f(x^k), d^k\rangle \leq -\tfrac1s\,\|d^k\|^2$:
+$$
+f(x^{k+1}) \;\leq\; f(x^k) - \tfrac{\sigma\,\bar\alpha}{s}\,\|d^k\|^2.
+$$
+
+<Why>
+La minimización **siempre gana** lo que cualquier candidato fijo. Tomando
+$\alpha = \bar\alpha$ como candidato y combinando con la cota cuantitativa
+de la parte (a), obtenemos un decrecimiento explícito de $f$ por iteración.
+</Why>
+</Step>
+
+<Step n={3} title="Argumento de contradicción">
+Supongamos $x^{k_j} \to \bar x$ subsucesión con $\bar x$ no estacionario.
+Por (b), $\|d^{k_j}\|^2 \to \|\bar y - \bar x\|^2 > 0$. Entonces existe
+$\delta > 0$ y $K$ tal que para $j \geq K$, $\|d^{k_j}\|^2 \geq \delta$.
+
+Por el paso 2:
+$$
+f(x^{k_j + 1}) \;\leq\; f(x^{k_j}) - \tfrac{\sigma\,\bar\alpha\,\delta}{s}.
+$$
+
+Pero $f(x^{k_j}) \to f(\bar x)$ (continuidad de $f$), así que la sucesión
+$\{f(x^k)\}$ está acotada inferiormente por $f(\bar x) - \varepsilon$ para
+$k$ grande. La diferencia $f(x^{k_j}) - f(x^{k_j + 1})$ no puede mantenerse
+$\geq \tfrac{\sigma\,\bar\alpha\,\delta}{s} > 0$ infinitamente: contradicción.
+
+Por lo tanto $\bar x$ debe ser estacionario.
+
+<Why>
+El núcleo del argumento: si $f(x^k)$ converge (porque $\{x^k\}$ converge
+a $\bar x$ y $f$ es continua), las diferencias $f(x^k) - f(x^{k+1})$
+tienen que tender a 0. Si la diferencia se mantuviera $\geq c > 0$
+infinitamente, la sucesión $\{f(x^k)\}$ bajaría a $-\infty$, no convergería.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (d): regla de Armijo
+
+### Intuición
+
+La regla de Armijo encuentra explícitamente un $\alpha^k$ que cumple la
+desigualdad de descenso. La pregunta es si los $\alpha^k$ no se desinflan
+(no se van a 0). La respuesta: **no**, porque para cualquier punto donde
+el descenso sea estricto existe un umbral $\bar\alpha$ uniforme bajo el
+cual Armijo se satisface, y el backtracking encuentra un $\alpha^k \geq \beta\,\bar\alpha$.
+
+<ArmijoBacktrackingDemo />
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Existencia de ᾱ uniforme cuando ⟨∇f,d⟩ < 0">
+Para cada $x$ con $\langle \nabla f(x), d\rangle < 0$ (con $d$ acotado en
+norma), existe $\bar\alpha(x) > 0$ tal que para todo $\alpha \in (0, \bar\alpha]$:
+$$
+f(x + \alpha d) \leq f(x) + \sigma\,\alpha\,\langle \nabla f(x), d\rangle.
+$$
+
+Esto es un cálculo directo: $h(\alpha) := f(x + \alpha d) - f(x) - \sigma\alpha\langle \nabla f(x), d\rangle$.
+$h(0) = 0$, $h'(0) = (1 - \sigma)\langle \nabla f(x), d\rangle < 0$. Por
+continuidad de $h'$, $h(\alpha) \leq 0$ en un entorno derecho de 0.
+
+<Why>
+La función $h$ es la diferencia entre $f$ a lo largo de la dirección y la
+cota Armijo. En 0 vale 0 con derivada estrictamente negativa, así que
+queda por debajo de 0 en un intervalo $(0, \bar\alpha]$. Es el mismo
+argumento que justifica la existencia del primer paso aceptado en el
+backtracking estándar.
+</Why>
+</Step>
+
+<Step n={2} title="ᾱ es uniforme cerca de un punto no estacionario">
+Si $x^{k_j} \to \bar x$ no estacionario, por continuidad de $\nabla f$ y
+del operador $d \mapsto P(x - s\nabla f) - x$, los $\langle \nabla f(x^{k_j}), d^{k_j}\rangle$
+están acotados superiormente por una cantidad **estrictamente negativa**
+$-\eta < 0$, y los $\|d^{k_j}\|$ acotados superiormente por una constante
+$D$. En esa región, se puede tomar **un mismo** $\bar\alpha > 0$ que
+sirve para todos los $k_j$.
+
+<Why>
+Compacidad local + suavidad de las cantidades. La existencia del $\bar\alpha$
+del paso 1 viene de la estructura local de $f$ alrededor de cada $x$;
+cuando $x$ varía dentro de un compacto donde el descenso es estrictamente
+negativo, el $\bar\alpha$ se puede elegir uniforme. Acá usamos $f \in C^1$
+para garantizar continuidad uniforme.
+</Why>
+</Step>
+
+<Step n={3} title="Armijo da α^k ≥ β·ᾱ">
+El backtracking empieza en $\alpha = 1$ y multiplica por $\beta$ hasta caer
+en $(0, \bar\alpha]$. El primer $\alpha^k$ aceptado satisface
+$\alpha^k > \bar\alpha$ (rechazado) o $\alpha^k \leq \bar\alpha$. En el
+peor caso, $\alpha^k \in (\beta\bar\alpha,\, \bar\alpha]$ (porque el
+predecesor $\alpha^k/\beta$ era $> \bar\alpha$). Por lo tanto:
+$$
+\alpha^k \;\geq\; \beta\,\bar\alpha \;>\; 0.
+$$
+
+<Why>
+La cota inferior $\beta\,\bar\alpha$ es uniforme: depende solo de $\bar\alpha$
+(uniforme por el paso 2) y de $\beta$ (constante de la regla). Esto es lo
+que evita que los pasos se "desinflen" en el límite.
+</Why>
+</Step>
+
+<Step n={4} title="Concluir por contradicción">
+Para $k$ grande en la subsucesión que converge a $\bar x$ no estacionario:
+$$
+f(x^{k+1}) \;\leq\; f(x^k) + \sigma\,\alpha^k\,\langle \nabla f(x^k), d^k\rangle \;\leq\; f(x^k) + \sigma\,(\beta\bar\alpha)\,(-\eta) \;=\; f(x^k) - \sigma\,\beta\,\bar\alpha\,\eta.
+$$
+
+La reducción es **al menos $\sigma\,\beta\,\bar\alpha\,\eta > 0$ por iteración**.
+Como $f$ es continua y $x^k$ converge, $\{f(x^k)\}$ converge a un valor
+finito; eso impide reducciones uniformes infinitas: contradicción. Por lo
+tanto $\bar x$ debe ser estacionario.
+
+<Why>
+El cierre del argumento es el mismo que en (c): el límite de $f(x^k)$
+existe (compacidad / continuidad), pero "reducciones de magnitud fija
+infinitas" lo harían diverger. Como no diverge, el supuesto "$\bar x$ no
+estacionario" es falso.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Errores típicos
+
+<Warning>
+- **Olvidar que la cota es cuantitativa**, no solo cualitativa: $\langle \nabla f, d\rangle \leq -\|d\|^2/s$
+  es **mucho más fuerte** que solo "es de descenso". La magnitud
+  $\|d\|^2/s$ es lo que sostiene el argumento de progreso uniforme.
+- **Pretender que $\alpha^k \to 0$**: en Armijo estándar, $\alpha^k$ está
+  acotado por debajo lejos de los puntos estacionarios. Esto contradice
+  la intuición ingenua "el paso se hace chico", que solo aplica cerca de
+  óptimos.
+- **Pasar al límite con desigualdades estrictas**: solo se preservan las
+  desigualdades **no estrictas**. Por eso en (b) escribimos $\leq$ y
+  después de obtener el límite, **separamos casos** sobre si $\|\bar y - \bar x\|$
+  es 0 o positivo.
+- **Confundir minimización limitada con line search Wolfe**: la primera
+  pide solo $\alpha \in [0, 1]$ óptimo; Wolfe pide condiciones de Armijo
+  + curvatura. Para problemas con restricciones, $[0, 1]$ es natural
+  porque $\bar x = x + 1\cdot d \in \mathcal{X}$ por construcción.
+- **Usar $\|d^k\|^2 \to 0$ como hipótesis**: al revés, $\|d^k\|^2 \to 0$
+  **es la conclusión** (a posteriori, una vez probado que $\bar x$ es
+  estacionario). Argumentar circularmente desde ahí no demuestra nada.
+- **Aplicar el resultado a $f$ no diferenciable**: la cota
+  $\langle \nabla f, d\rangle \leq -\|d\|^2/s$ usa la existencia de
+  $\nabla f$. Para $f$ no suave hay versiones con subgradientes y proximales
+  (P3-Ej6), pero la prueba cambia.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿De dónde sale exactamente la cota ⟨∇f, d⟩ ≤ −‖d‖²/s?"
+>
+De la caracterización variacional de la proyección con $z = x - s\,\nabla f(x)$
+y $\bar x = P_{\mathcal{X}}(z)$, eligiendo el punto $x \in \mathcal{X}$
+(es decir, sustituyendo). Después se distribuye el producto interno y se
+divide por $s > 0$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="¿Por qué la continuidad de P_X es relevante?"
+>
+Permite pasar al límite: si $x^k \to \bar x$, entonces
+$\bar x^k = P(x^k - s\nabla f(x^k)) \to P(\bar x - s\nabla f(\bar x))$.
+La continuidad sale de la no expansividad: $\|P(u) - P(v)\| \leq \|u - v\|$,
+así que $P$ es 1-Lipschitz, en particular continua.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Por qué la regla de minimización limitada implica que el límite es estacionario?"
+>
+Porque la reducción óptima es **al menos** la del candidato fijo
+$\alpha = \bar\alpha$, que da una reducción cuantitativa $\geq \sigma\bar\alpha\,\|d^k\|^2/s$.
+Si $\bar x$ no fuera estacionario, $\|d^k\|^2$ se mantiene acotado por
+debajo y la reducción uniforme contradeciría la convergencia de $\{f(x^k)\}$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="¿Por qué Armijo no permite que α^k → 0 cerca de un punto no estacionario?"
+>
+Porque hay un $\bar\alpha > 0$ uniforme tal que cualquier $\alpha \in (0, \bar\alpha]$
+satisface Armijo. El backtracking arranca en 1 y baja por factores $\beta$
+hasta caer en ese intervalo, así que termina con $\alpha^k \geq \beta\,\bar\alpha$.
+Es una cota inferior **uniforme** (no depende de $k$ en una vecindad
+del punto límite), garantizada por la continuidad de $f$ y la estructura
+local del problema.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Qué pasa si f no es diferenciable?"
+>
+La cota $\langle \nabla f, d\rangle \leq -\|d\|^2/s$ usa la existencia
+del gradiente. Para $f$ no suave hay análogos con subgradientes (e.g.,
+proximal-gradient) o con operadores monótonos. La estructura del argumento
+(propiedad de la proyección + cota de descenso + Armijo) se mantiene en
+forma adaptada.
+</ControlQuestion>
+
+<ControlQuestion
+  n={6}
+  question="¿Cuál es el rol del paso interno s?"
+>
+Es el "paso virtual" sin restricción. La cota
+$\langle \nabla f, d\rangle \leq -\|d\|^2/s$ depende de $s$: $s$ chico
+da $d$ chico (paso virtual chico) y la cota es "fuerte" relativa a la
+norma de $d$. La elección de $s$ no afecta la convergencia, pero sí la
+velocidad: $s$ debe ser comparable a $1/L$ (Lipschitz del gradiente)
+para no desperdiciar progreso.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**Iteración GP con paso variable.** $\bar x^k = P_{\mathcal{X}}(x^k - s\,\nabla f(x^k))$, $d^k = \bar x^k - x^k$, $x^{k+1} = x^k + \alpha^k\,d^k$.
+
+**Cota de descenso (parte a).** $\langle \nabla f(x^k),\, d^k\rangle \leq -\tfrac1s\,\|d^k\|^2$. Sale de aplicar la caracterización variacional al $z = x^k - s\,\nabla f(x^k)$.
+
+**Pasaje al límite (parte b).** Si $x^k \to \bar x$ no estacionario, entonces $\lim \langle \nabla f(x^k), d^k\rangle \leq -\tfrac1s\,\|\bar y - \bar x\|^2 < 0$, con $\bar y = P_{\mathcal{X}}(\bar x - s\,\nabla f(\bar x))$.
+
+**Minimización limitada (parte c).** $\alpha_k \in \arg\min_{[0,1]} f(x^k + \alpha d^k)$. Implica reducción $\geq \sigma\bar\alpha\,\|d^k\|^2/s$. Por contradicción, todo punto límite es estacionario.
+
+**Armijo (parte d).** $\alpha^k = \beta^{m_k}$ con $f(x^k + \alpha^k d^k) \leq f(x^k) + \sigma\alpha^k\langle \nabla f(x^k), d^k\rangle$.
+
+**Existencia de ᾱ uniforme.** Cerca de un punto no estacionario, $\bar\alpha$ se puede tomar uniforme; el backtracking da $\alpha^k \geq \beta\bar\alpha > 0$.
+
+**Conclusión.** Reducción uniforme $\geq \sigma\beta\bar\alpha\,\eta$ por iteración. Contradicción con convergencia de $\{f(x^k)\}$ ⇒ todo punto límite es estacionario.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p3-ej4" />

@@ -13,7 +13,10 @@ const OUT = "out/pdf";
 async function main() {
   mkdirSync(OUT, { recursive: true });
 
-  const eligible = fichas.filter((f) => f.status !== "todo");
+  const eligible = fichas.filter((f) => {
+    const status: string = f.status;
+    return status === "published" || status === "draft";
+  });
   if (eligible.length === 0) {
     console.warn(`No fichas marked as published yet. Filter on lib/content/fichas.ts.`);
     return;

@@ -91,7 +91,7 @@ export const fichas = [
     practico: 3,
     ejercicio: 4,
     estimated_minutes: 90,
-    status: "todo",
+    status: "draft",
   },
   {
     id: "P3-Ej5",
@@ -100,7 +100,7 @@ export const fichas = [
     practico: 3,
     ejercicio: 5,
     estimated_minutes: 90,
-    status: "todo",
+    status: "draft",
   },
   {
     id: "P3-Ej6",
@@ -109,7 +109,7 @@ export const fichas = [
     practico: 3,
     ejercicio: 6,
     estimated_minutes: 90,
-    status: "todo",
+    status: "draft",
   },
 ] as const satisfies readonly Ficha[];
 

@@ -1,0 +1,509 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { WaterFillingDemo } from "./_components/WaterFillingDemo";
+import { DualFunctionDemo } from "./_components/DualFunctionDemo";
+import { SensitivityDemo } from "./_components/SensitivityDemo";
+
+export const metadata = {
+  title: "P3-Ej5: KKT y dualidad de Lagrange (water-filling)",
+  description:
+    "Asignación óptima de potencia entre canales: condiciones KKT, función dual, solución analítica water-filling y precio sombra.",
+};
+
+<FichaHeader
+  practico={3}
+  ejercicio={5}
+  title="KKT y dualidad de Lagrange (water-filling)"
+  estimated_minutes={90}
+/>
+
+## Motivación
+
+Tenemos $n$ canales de comunicación y queremos repartir una potencia
+total $P > 0$ para **maximizar la suma de capacidades**, con cada canal
+aportando $u_i(x_i) = \log(1 + a_i x_i)$ ($a_i > 0$ es la calidad del
+canal). Equivalentemente, minimizamos
+
+$$
+f(x) \;=\; -\sum_{i=1}^n \log(1 + a_i x_i) \quad \text{sujeto a }\sum_i x_i = P,\; x_i \geq 0.
+$$
+
+Es **convexo con restricciones lineales**: candidato perfecto para KKT y
+dualidad. La dualidad va a transformar un problema de $n$ variables en
+**uno solo** (un escalar $\nu$), y la solución resultante tiene una
+interpretación física: **water-filling**.
+
+<WaterFillingDemo />
+
+Cada canal tiene un "ruido" $1/a_i$ (canales mejores = ruido más chico).
+La solución óptima fija un nivel de agua común $1/\nu^*$ y asigna a cada
+canal $x_i^* = \max(0, 1/\nu^* - 1/a_i)$: solo los canales con ruido
+suficientemente bajo reciben potencia.
+
+## Definiciones y herramientas
+
+<Definition title="Lagrangiano">
+$$
+L(x, \lambda, \nu) \;=\; -\sum_{i=1}^n \log(1 + a_i x_i) - \sum_{i=1}^n \lambda_i x_i + \nu\,\Big(\sum_i x_i - P\Big),
+$$
+con $\lambda_i \geq 0$ multiplicadores de $-x_i \leq 0$ y $\nu \in \mathbb{R}$
+multiplicador de $\sum x_i = P$.
+</Definition>
+
+<Definition title="Condiciones KKT">
+1. **Estacionariedad:** $\nabla_x L = 0$.
+2. **Factibilidad primal:** $x_i \geq 0$, $\sum x_i = P$.
+3. **Factibilidad dual:** $\lambda_i \geq 0$.
+4. **Complementariedad:** $\lambda_i x_i = 0$.
+</Definition>
+
+<Definition title="Función dual">
+$$
+g(\nu) \;=\; \inf_{x \geq 0} L(x, \lambda, \nu) \;=\; \min_{x \geq 0} \Big\{-\sum_i \log(1 + a_i x_i) + \nu\,\sum_i x_i\Big\} - \nu\,P.
+$$
+
+Después de optimizar $\lambda$ y $x$ por separado, $g$ depende solo de
+$\nu$. El problema dual es maximizar $g(\nu)$ sobre $\nu \in \mathbb{R}$
+(o en la región donde $g$ es finita).
+</Definition>
+
+## Enunciado
+
+Minimizar $f(x) = -\sum \log(1 + a_i x_i)$ s.t. $\sum x_i = P$, $x_i \geq 0$,
+con $a_i > 0$.
+
+- **(a)** Escribir el Lagrangiano y plantear las condiciones KKT.
+- **(b)** Para $\lambda, \nu$ fijos, minimizar $L$ sobre $\mathbb{R}^n$:
+  mostrar que la $i$-ésima coordenada óptima es $x_i = 1/(\nu - \lambda_i) - 1/a_i$
+  cuando $\nu > \lambda_i$ (si no, no acotada). Usar complementariedad
+  para deducir $x_i^*(\nu) = \max\{0, 1/\nu - 1/a_i\}$, y derivar la
+  función dual $g(\nu)$.
+- **(c)** Mostrar que $g$ es cóncava y diferenciable en $\nu > 0$, con
+  $g'(\nu) = \sum_i x_i(\nu) - P$. Deducir la condición de optimalidad
+  dual y la solución primal.
+- **(d)** $V(P) = $ valor óptimo primal. Probar $dV/dP = \nu^*$.
+
+---
+
+## Parte (a): Lagrangiano y condiciones KKT
+
+### Intuición
+
+Las restricciones de igualdad $\sum x_i = P$ entran con un multiplicador
+$\nu$ libre (sin signo). Las de desigualdad $x_i \geq 0$ entran con
+multiplicadores $\lambda_i \geq 0$. La estacionariedad pide que el
+gradiente del Lagrangiano respecto a $x$ se anule, juntando los efectos
+de la objetivo, las desigualdades y la igualdad.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Escribir el Lagrangiano">
+Restricciones $-x_i \leq 0$ con multiplicadores $\lambda_i \geq 0$, e
+igualdad $\sum x_i - P = 0$ con multiplicador $\nu$:
+$$
+L(x, \lambda, \nu) \;=\; \underbrace{-\sum_i \log(1 + a_i x_i)}_{\text{objetivo}} \;+\; \underbrace{\sum_i \lambda_i\,(-x_i)}_{\geq 0\text{ implícito}} \;+\; \underbrace{\nu\Big(\sum_i x_i - P\Big)}_{=0\text{ implícito}}.
+$$
+
+<Why>
+Los multiplicadores $\lambda_i$ acompañan a las restricciones reescritas
+como $g_i(x) = -x_i \leq 0$. Convención estándar: signo positivo en el
+Lagrangiano. La igualdad $h(x) = \sum x_i - P = 0$ entra con $\nu$ libre.
+Reordenando los signos, $L = -\sum \log(1 + a_i x_i) - \sum \lambda_i x_i + \nu(\sum x_i - P)$.
+</Why>
+</Step>
+
+<Step n={2} title="Condiciones KKT">
+1. **Estacionariedad:** $\partial L/\partial x_i = -\tfrac{a_i}{1+a_i x_i} - \lambda_i + \nu = 0$
+   para todo $i$.
+2. **Factibilidad primal:** $x_i \geq 0$ y $\sum x_i = P$.
+3. **Factibilidad dual:** $\lambda_i \geq 0$.
+4. **Complementariedad:** $\lambda_i\,x_i = 0$ para todo $i$.
+
+<Why>
+La estacionariedad tiene tres términos: derivada del objetivo, contribución
+de cada $-x_i \leq 0$, y la igualdad. Despejando:
+$\nu = \tfrac{a_i}{1+a_i x_i} + \lambda_i$, que es una condición acoplada
+entre la elección de $x$ y los multiplicadores. La complementariedad dice
+que **a lo sumo uno de $\lambda_i, x_i$ es positivo**: si $x_i > 0$,
+$\lambda_i = 0$ (canal activo); si $x_i = 0$, $\lambda_i$ puede ser positivo
+(canal inactivo, restricción saturada).
+</Why>
+</Step>
+
+<Step n={3} title="Slater y suficiencia de KKT">
+$x = (P/n, P/n, \ldots, P/n)$ es estrictamente factible (todas las
+desigualdades estrictas). Por Slater, KKT son **necesarias y suficientes**
+para optimalidad (porque el problema es convexo: $f$ convexa, restricciones
+afines + desigualdades convexas).
+
+<Why>
+Slater asegura **fuerte dualidad** en problemas convexos. Sumado a
+convexidad estricta del problema (la $f$ es estrictamente convexa en cada
+$x_i$), el óptimo primal y dual existen, son únicos, y satisfacen KKT.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (b): minimización del Lagrangiano sobre $x$
+
+### Intuición
+
+Para $\lambda, \nu$ fijos, $L$ se separa por coordenadas (suma de funciones
+de $x_i$ por separado). En cada coordenada minimizamos
+$\varphi_i(t) = -\log(1 + a_i t) + (\nu - \lambda_i)\,t$. Si la pendiente
+asintótica $\nu - \lambda_i > 0$, la función tiene mínimo finito; si no,
+va a $-\infty$ (el ínfimo es $-\infty$).
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Análisis coordenada por coordenada">
+$L$ se separa: $L(x, \lambda, \nu) = \sum_i \varphi_i(x_i) - \nu P$, con
+$\varphi_i(t) = -\log(1 + a_i t) + (\nu - \lambda_i)\,t$.
+
+$\varphi_i'(t) = -\tfrac{a_i}{1 + a_i t} + (\nu - \lambda_i)$.
+
+- Si $\nu - \lambda_i \leq 0$, $\varphi_i'(t) < 0$ para todo $t \geq 0$,
+  así que $\varphi_i$ es decreciente y $\varphi_i(t) \to -\infty$ cuando
+  $t \to \infty$: el ínfimo es $-\infty$.
+- Si $\nu - \lambda_i > 0$, $\varphi_i'(t) = 0$ pide
+  $\tfrac{a_i}{1 + a_i t} = \nu - \lambda_i$, es decir
+  $1 + a_i t = a_i / (\nu - \lambda_i)$, así
+  $$
+  t^* \;=\; \frac{1}{\nu - \lambda_i} - \frac{1}{a_i}.
+  $$
+
+<Why>
+La estructura "log + lineal" hace que la derivada se pueda invertir
+explícitamente. La condición $\nu > \lambda_i$ es la que mantiene el
+problema bien planteado: dice que el "precio" $\nu$ cubre al menos el
+"piso" $\lambda_i$ del canal $i$. Si no lo cubre, conviene poner potencia
+infinita, lo que hace al Lagrangiano no acotado.
+</Why>
+</Step>
+
+<Step n={2} title="Aplicar complementariedad para fijar λ">
+Si $x_i^* > 0$: por complementariedad $\lambda_i = 0$, así que
+$x_i^* = 1/\nu - 1/a_i$. Para esto necesitamos $\nu < a_i$ (si no,
+$x_i^*$ daría negativo).
+
+Si $x_i^* = 0$: la restricción $-x_i \leq 0$ está activa, y $\lambda_i \geq 0$
+puede tomar cualquier valor compatible con estacionariedad:
+$\lambda_i = \nu - a_i$, que requiere $\lambda_i \geq 0$, es decir $\nu \geq a_i$.
+
+Combinando ambos casos:
+$$
+\boxed{\; x_i^*(\nu) \;=\; \max\!\Big\{0,\; \tfrac{1}{\nu} - \tfrac{1}{a_i}\Big\}\;}
+$$
+
+<Why>
+La fórmula water-filling. Cuando $\nu < a_i$ (canal "barato"), el canal
+está activo y recibe $1/\nu - 1/a_i$ de potencia. Cuando $\nu \geq a_i$
+(canal "caro"), el canal queda en cero. El umbral $\nu = a_i$ es donde
+el canal $i$ empieza a entrar.
+</Why>
+</Step>
+
+<Step n={3} title="Construcción de g(ν)">
+Sustituyendo $x_i^*(\nu)$ en $L$ y separando casos:
+- Canal activo ($\nu < a_i$): $\varphi_i(x_i^*) = -\log(1 + a_i x_i^*) + \nu x_i^* = -\log(a_i/\nu) + \nu/\nu - 1 = \log(\nu/a_i) + 1 - \nu/a_i$.
+- Canal inactivo ($\nu \geq a_i$): $\varphi_i(0) = 0$.
+
+(En el inactivo $\lambda_i x_i = 0$ y $\varphi_i(0) = 0$.) Entonces, sumando solo
+sobre canales activos (los inactivos aportan 0):
+$$
+g(\nu) \;=\; \sum_{i:\,\nu < a_i} \!\Big[\log\tfrac{\nu}{a_i} + 1 - \tfrac{\nu}{a_i}\Big] \;-\; P\,\nu, \qquad \nu > 0.
+$$
+(Cada término activo es $\leq 0$ porque $h(r) = \log r + 1 - r$ tiene máximo
+$h(1) = 0$ y es estrictamente cóncava, así que $h(\nu/a_i) \leq 0$ con
+igualdad sólo cuando $\nu = a_i$.)
+
+<Why>
+La forma cerrada del dual es un solo escalar $\nu$. **El problema pasó
+de $n$ variables a una.** Es la magia de la dualidad: cuando hay
+estructura, la función dual concentra la información en menos variables.
+</Why>
+</Step>
+</Proof>
+
+<DualFunctionDemo />
+
+---
+
+## Parte (c): concavidad, diferenciabilidad y solución
+
+### Intuición
+
+$g(\nu)$ es suma de funciones cóncavas ($\log\nu/a_i$ es cóncava, $-\nu/a_i$
+es lineal, el $\max\{0, \cdot\}$ preserva concavidad cuando el adentro lo
+es) más una lineal. Su derivada es $\sum x_i(\nu) - P$, que es decreciente
+y cruza cero en un único $\nu^*$. Ese $\nu^*$ resuelve el dual; sustituido
+en $x_i^*(\nu)$ da la solución primal.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Concavidad de g">
+La función $h(\nu) = \log(\nu/a) + 1 - \nu/a$ tiene $h''(\nu) = -1/\nu^2 < 0$:
+estrictamente cóncava en $\nu > 0$. Por lo tanto $\max\{0, h(\nu)\}$ es
+cóncava (máximo de cóncava y constante), y $g(\nu)$ es suma de cóncavas
+menos una lineal, por lo tanto cóncava.
+
+<Why>
+La concavidad del dual es **automática** en cualquier problema convexo:
+$g(\nu) = \inf_x L(x, \nu)$ es ínfimo de funciones afines (en $\nu$), por
+lo tanto cóncava. Acá lo verificamos directamente, pero el principio
+general es más fuerte.
+</Why>
+</Step>
+
+<Step n={2} title="Derivada g'(ν) = Σ x_i(ν) − P">
+Derivamos $g$ respecto a $\nu$. Cada término activo:
+$\tfrac{d}{d\nu}\big(\log\nu/a_i + 1 - \nu/a_i\big) = 1/\nu - 1/a_i = x_i(\nu)$.
+Cada término inactivo aporta 0. Y la parte $-P\nu$ contribuye $-P$:
+$$
+g'(\nu) \;=\; \sum_i x_i(\nu) - P.
+$$
+
+(En los puntos $\nu = a_i$ donde un canal pasa de activo a inactivo, el
+máximo se rompe en derivadas direccionales, pero las derivadas laterales
+coinciden por la continuidad de $x_i(\nu)$ en cero.)
+
+<Why>
+La fórmula tiene una **lectura económica**: $g'(\nu) > 0$ cuando hay
+exceso de demanda de potencia ($\sum x_i > P$, hay que subir el precio),
+y $g'(\nu) < 0$ cuando hay exceso de oferta ($\sum x_i < P$, bajar el
+precio). En el equilibrio, oferta = demanda.
+</Why>
+</Step>
+
+<Step n={3} title="Optimalidad dual y solución primal">
+$g$ cóncava ⇒ máximo único en $\nu^*$ con $g'(\nu^*) = 0$, es decir
+$\sum_i x_i(\nu^*) = P$. La solución primal:
+$$
+x_i^* \;=\; \max\!\Big\{0,\; \tfrac{1}{\nu^*} - \tfrac{1}{a_i}\Big\}.
+$$
+
+Esta es la **fórmula water-filling**: $1/\nu^*$ es el "nivel de agua"
+común a todos los canales; cada canal con piso $1/a_i$ por debajo del
+nivel se "llena" con la diferencia.
+
+<Why>
+El nivel de agua $1/\nu^*$ se ajusta para que la potencia total asignada
+sea exactamente $P$. Numericamente, basta hacer una búsqueda binaria
+(g'(ν) es decreciente). En problemas con muchos canales se ordena por
+$a_i$ y se llena de a uno: empezás suponiendo todos activos, calculás
+$\nu$, si algún $x_i$ da negativo lo descartás y reintentás. En a lo
+sumo $n$ pasos converge.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (d): sensibilidad y precio sombra
+
+### Intuición
+
+$V(P)$ es el valor óptimo primal en función de $P$. La fórmula
+$dV/dP = \nu^*$ dice que **el multiplicador óptimo es exactamente cuánto
+mejora el óptimo por unidad adicional de recurso**. Es la interpretación
+económica fundamental de los multiplicadores de Lagrange: precio sombra.
+
+<SensitivityDemo />
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Forma envolvente del valor primal">
+Por dualidad fuerte (Slater),
+$$
+V(P) \;=\; \max_x \sum_i \log(1 + a_i x_i) \quad \text{s.t. } \sum x_i = P, x_i \geq 0
+$$
+$$
+\;=\; -\min_x f(x) \;=\; -g_{\text{dual-min}}^* \;=\; -\big(\inf_\nu (-g(\nu))\big) \;=\; \sup_\nu g(\nu) + P\,\nu \;\;-\;\;\text{(reescribiendo)}.
+$$
+
+Actually mejor escrito: $V(P) = -[$mínimo de $f$ s.t.$]$, y la dualidad
+da
+$$
+V(P) \;=\; \max_\nu \Big[\text{(parte de $g$ sin el $-\nu P$)} - 0\Big] = \nu^* P + \text{(constantes en $\nu^*$)}.
+$$
+
+Más útil: usar la fórmula de la envolvente (teorema de Danskin).
+
+<Why>
+Hay dos vías: (i) calcular $V(P)$ explícito y derivar; (ii) aplicar el
+teorema de la envolvente (que dice que cuando $V(P) = \max_x F(x, P)$
+y existen condiciones de regularidad, $dV/dP = \partial F/\partial P$
+evaluado en el maximizador). La segunda es más limpia.
+</Why>
+</Step>
+
+<Step n={2} title="Aplicar el teorema de la envolvente">
+$V(P) = -\min_x f(x)$ s.t. $\sum x_i = P, x_i \geq 0$. La forma de
+Lagrange:
+$$
+V(P) \;=\; \max_{\nu, \lambda \geq 0} \min_x L(x, \lambda, \nu) \;+\; \nu\,P \;+\; \text{(reordenando signos)},
+$$
+donde el "$+\nu P$" sale de aislar la dependencia explícita en $P$. El
+**teorema de la envolvente** (Danskin) dice:
+$$
+\frac{dV}{dP} \;=\; \frac{\partial L}{\partial P}\Big|_{(x^*, \lambda^*, \nu^*)} \;=\; \nu^*.
+$$
+
+<Why>
+La dependencia explícita de $L$ en $P$ es solo a través del término
+$\nu(\sum x_i - P)$, cuyo $\partial / \partial P$ es $-\nu$. Combinado
+con el signo del máximo, se obtiene $dV/dP = \nu^*$. Este es el caso
+canónico: el multiplicador de la restricción de igualdad **es** la
+sensibilidad del óptimo respecto al lado derecho.
+</Why>
+</Step>
+
+<Step n={3} title="Verificación directa via KKT">
+Otra ruta: derivar implícitamente la condición $\sum x_i^*(\nu^*(P)) = P$
+respecto a $P$. Como $\sum x_i^* = P$, $\sum (dx_i^*/dP) = 1$. Y
+$V(P) = \sum_i \log(1 + a_i x_i^*(P))$, así
+$$
+\frac{dV}{dP} \;=\; \sum_i \tfrac{a_i}{1 + a_i x_i^*}\,\frac{dx_i^*}{dP} \;=\; \sum_i \nu^*\,\frac{dx_i^*}{dP} \;=\; \nu^*\,\sum_i \frac{dx_i^*}{dP} \;=\; \nu^*.
+$$
+
+(En el segundo paso usamos $a_i/(1 + a_i x_i^*) = \nu^*$ por la
+estacionariedad KKT en canales activos; canales inactivos no contribuyen.)
+
+<Why>
+La cuenta directa es transparente: la **estacionariedad** dice que cada
+término de la derivada se evalúa en el mismo $\nu^*$, así que $\nu^*$
+sale de factor común y la suma queda $\nu^* \cdot 1 = \nu^*$. La
+"información sombra" del multiplicador queda explícita en el cálculo.
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Errores típicos
+
+<Warning>
+- **Olvidar el signo de los multiplicadores**: $\lambda_i \geq 0$ para
+  desigualdades, $\nu \in \mathbb{R}$ para igualdades. Confundirlos
+  invalida la complementariedad.
+- **Usar la fórmula $x_i = 1/(\nu - \lambda_i) - 1/a_i$ con $\lambda_i$
+  no cero arbitrario**: solo está bien definida si $\nu > \lambda_i$. En
+  canales activos, complementariedad fuerza $\lambda_i = 0$ y la fórmula
+  pasa a $x_i = 1/\nu - 1/a_i$.
+- **Pretender que todos los canales son activos**: pueden no serlo. Si
+  un canal $i$ tiene $a_i$ chico (mucho ruido) y $\nu^*$ es grande, ese
+  canal queda en cero. La fórmula water-filling lo captura con el
+  $\max\{0, \cdot\}$.
+- **Resolver el primal directo en alta dimensión**: para $n$ grande, el
+  problema primal tiene $n$ variables y $n + 1$ restricciones; el dual
+  tiene **una sola** variable. Resolver el dual es muchísimo más eficiente.
+- **Confundir el dual con la inversa de la primal**: el dual no es "el
+  primal al revés". Es un nuevo problema construido a partir de
+  $\inf_x L$, generalmente distinto en estructura, y conectado al primal
+  por dualidad fuerte (cuando se cumple Slater).
+- **Olvidar que $g$ puede valer $-\infty$**: solo tiene sentido en la
+  región $\nu > 0$ donde el ínfimo del Lagrangiano es finito. Fuera de
+  esa región, el dual no aporta información.
+- **Pretender que $dV/dP = \nu^*$ vale para problemas no convexos sin
+  garantía**: necesita regularidad (Slater + $V$ diferenciable). En
+  problemas no convexos hay que pasar a subdiferenciales y $\nu^*$ se
+  vuelve un elemento del subgradiente.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿Por qué la solución óptima tiene la forma 'water-filling'?"
+>
+Por las KKT: estacionariedad pide $\nu = a_i/(1 + a_i x_i^*) + \lambda_i$
+para todo $i$. En canales activos $\lambda_i = 0$, así que
+$x_i^* = 1/\nu - 1/a_i$ (canal activo si $\nu < a_i$); en canales
+inactivos $x_i^* = 0$. El umbral común $1/\nu^*$ es el "nivel de agua"
+y los $1/a_i$ son los "pisos" individuales.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="¿Cuál es la dimensión del problema dual y por qué?"
+>
+**Una sola variable** ($\nu$). Aunque el primal tiene $n$ variables y
+$n+1$ multiplicadores potenciales, los $\lambda_i$ se eliminan via
+complementariedad y el problema dual queda en $\nu$ solo. Esa reducción
+de dimensión es el principal valor computacional del dual.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Cómo se calcula numéricamente ν*?"
+>
+Búsqueda binaria sobre $\nu > 0$: $g'(\nu) = \sum x_i(\nu) - P$ es
+decreciente y continua. Se busca $\nu$ con $g'(\nu) = 0$. Alternativa:
+ordenar canales por $a_i$ decreciente y "incluirlos" uno por uno hasta
+satisfacer la suma.
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="¿Qué significa ν* en términos económicos?"
+>
+**Precio sombra** del recurso (potencia total $P$). $\nu^*$ es cuánto
+aumenta la utilidad total por unidad adicional de potencia: $dV/dP = \nu^*$.
+Si tuvieras la opción de comprar más potencia a precio $p$, te conviene
+hacerlo si $p < \nu^*$ y no si $p > \nu^*$.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Por qué la fuerte dualidad vale acá?"
+>
+Por **Slater**: existe un punto estrictamente factible (e.g.,
+$x_i = P/n > 0$) y el problema es convexo (objetivo convexa,
+restricciones convexas/lineales). Slater + convexidad ⇒ fuerte dualidad
+(la diferencia primal-dual es 0). Eso garantiza que las KKT son
+suficientes y que el método dual reconstruye la solución primal.
+</ControlQuestion>
+
+<ControlQuestion
+  n={6}
+  question="¿Qué pasa si algún a_i es muy chico (canal muy ruidoso)?"
+>
+Ese canal queda **inactivo** ($x_i^* = 0$) cuando $\nu^* > a_i$ (es
+decir, cuando $1/a_i$ está por encima del nivel de agua $1/\nu^*$).
+Físicamente: si poner potencia en un canal con mucho ruido aporta poco a
+la capacidad, conviene mejor concentrar en los canales mejores. El
+water-filling lo decide automáticamente.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**Problema primal.** $\max \sum \log(1 + a_i x_i)$ s.t. $\sum x_i = P$, $x_i \geq 0$, $a_i > 0$.
+
+**Lagrangiano.** $L = -\sum \log(1+a_i x_i) - \sum \lambda_i x_i + \nu(\sum x_i - P)$.
+
+**KKT.** Estacionariedad $\nu = a_i/(1+a_i x_i) + \lambda_i$; primal $x_i \geq 0$, $\sum x_i = P$; dual $\lambda_i \geq 0$; complementariedad $\lambda_i x_i = 0$.
+
+**Water-filling.** $x_i^* = \max\{0, 1/\nu^* - 1/a_i\}$. El nivel de agua $1/\nu^*$ se elige para que $\sum x_i^* = P$.
+
+**Función dual.** $g(\nu) = \sum \max\{0, \log(\nu/a_i) + 1 - \nu/a_i\} - P\,\nu$. Cóncava en $\nu > 0$.
+
+**Optimalidad dual.** $g'(\nu^*) = \sum x_i(\nu^*) - P = 0$.
+
+**Sensibilidad.** $dV/dP = \nu^*$ (precio sombra del recurso).
+
+**Reducción de dimensión.** Primal $n$ variables → dual 1 variable. Para $n$ grande, resolver el dual es órdenes de magnitud más barato.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p3-ej5" />
