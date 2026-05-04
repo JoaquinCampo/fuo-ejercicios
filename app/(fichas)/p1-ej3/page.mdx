@@ -1,0 +1,643 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { JensenDemo } from "./_components/JensenDemo";
+import { NegLogDemo } from "./_components/NegLogDemo";
+import { AMGMDemo } from "./_components/AMGMDemo";
+
+export const metadata = {
+  title: "P1-Ej3: Jensen y desigualdad aritmético-geométrica",
+  description:
+    "Generalizar la convexidad de 2 a n puntos (Jensen) y deducir AM ≥ GM aplicándola a -ln.",
+};
+
+<FichaHeader
+  practico={1}
+  ejercicio={3}
+  title="Jensen y desigualdad aritmético-geométrica"
+  estimated_minutes={75}
+/>
+
+## Motivación
+
+La definición de convexidad solo habla de **dos puntos**: la cuerda entre dos
+puntos del gráfico queda arriba del gráfico. Lo notable es que esta condición
+"local" se autopropaga: para cualquier cantidad de puntos $n$, el polígono
+convexo formado por las imágenes también queda arriba. Esa generalización es
+la **desigualdad de Jensen**.
+
+Y como consecuencia casi inmediata, aplicada a una función específica
+($g(x) = -\ln x$), cae la **desigualdad aritmético-geométrica**: el promedio
+de $n$ números positivos es siempre mayor o igual a su media geométrica. Una
+de las desigualdades más usadas del análisis sale como un caso particular de
+la convexidad.
+
+## Definiciones y herramientas
+
+<Definition title="Función convexa en R">
+$f \colon I \to \mathbb{R}$ es **convexa** si para todo $x, y \in I$ y todo
+$t \in [0, 1]$,
+$$
+f\big(t\,x + (1-t)\,y\big) \;\leq\; t\,f(x) + (1-t)\,f(y).
+$$
+</Definition>
+
+<Definition title="Combinación convexa de n puntos">
+Una **combinación convexa** de $x_1, \dots, x_n$ es una suma
+$\sum_{i=1}^{n} \lambda_i\,x_i$ con $\lambda_i \geq 0$ y
+$\sum_{i=1}^{n} \lambda_i = 1$. Los $\lambda_i$ se llaman **pesos convexos**.
+
+Geométricamente, las combinaciones convexas de $\{x_1, \dots, x_n\}$ generan el
+**casco convexo** (el menor convexo que los contiene): un intervalo si están
+en $\mathbb{R}$, un polígono si están en $\mathbb{R}^2$.
+</Definition>
+
+<Definition title="Caracterización por f'' (recordatorio del Ej2)">
+Si $f \in C^2$ en un intervalo, entonces
+$$
+f \text{ convexa} \;\iff\; f''(x) \geq 0 \text{ en todo el intervalo}.
+$$
+La implicación $\Rightarrow$ es la parte (d) del Ej2; la recíproca usa Taylor
+con resto de Lagrange.
+</Definition>
+
+## Enunciado
+
+- **(a)** Definir convexidad para $f \colon \mathbb{R} \to \mathbb{R}$.
+  Interpretar geométricamente con un diagrama.
+- **(b)** Sea $f$ convexa. Mostrar que para tres puntos $x_1, x_2, x_3$ y pesos
+  $\lambda_1, \lambda_2, \lambda_3 \geq 0$ con $\lambda_1 + \lambda_2 +
+  \lambda_3 = 1$,
+  $$
+  f(\lambda_1 x_1 + \lambda_2 x_2 + \lambda_3 x_3) \;\leq\;
+  \lambda_1 f(x_1) + \lambda_2 f(x_2) + \lambda_3 f(x_3).
+  $$
+  *Sugerencia: tomar $\lambda = \lambda_3$ en la definición y factorizar.*
+- **(c)** Mostrar por inducción que para todo $n \geq 2$, si $\sum \lambda_i =
+  1$ con $\lambda_i \geq 0$,
+  $$
+  f\!\left(\sum_{i=1}^{n} \lambda_i x_i\right) \;\leq\; \sum_{i=1}^{n}
+  \lambda_i f(x_i).
+  $$
+  Interpretar geométricamente.
+- **(d)** Probar que $g(x) = -\ln x$ es convexa en $\mathbb{R}_{>0}$.
+- **(e)** Aplicar (c) a $g$ con $\lambda_i = 1/n$ y deducir la **desigualdad
+  aritmético-geométrica**:
+  $$
+  \frac{x_1 + x_2 + \cdots + x_n}{n} \;\geq\; (x_1 x_2 \cdots x_n)^{1/n}.
+  $$
+
+---
+
+## Parte (a): definición e interpretación geométrica
+
+### Demostración
+
+<Proof>
+La definición está arriba (combinación convexa de dos puntos). La interpretación
+geométrica es la idea visual de "cuerda arriba del gráfico": para todo
+$x \in [a, b] \subset I$, el gráfico de $f$ entre $(a, f(a))$ y $(b, f(b))$
+queda **debajo** del segmento que los une.
+
+Si llamás $x = t\,a + (1-t)\,b$ con $t \in [0, 1]$, entonces
+$t\,f(a) + (1-t)\,f(b)$ es la altura de la cuerda en $x$, y la desigualdad
+$f(x) \leq$ cuerda($x$) es exactamente la convexidad.
+
+Equivalentemente: el **epigrafo** de $f$, el conjunto $\{(x, y) : y \geq f(x)\}$,
+es un conjunto convexo de $\mathbb{R}^2$.
+</Proof>
+
+---
+
+## Parte (b): Jensen para tres puntos
+
+### Intuición
+
+La idea es aplicar la convexidad **dos veces**: primero para fusionar dos de
+los tres puntos en un "punto promedio" $y$, y después para combinar $y$ con el
+tercer punto. La sugerencia "tomar $\lambda = \lambda_3$ y factorizar" empuja
+exactamente eso.
+
+<JensenDemo />
+
+Movés los tres puntos sobre la curva y los pesos $\lambda_i$. El triángulo rojo
+es el casco convexo de $(x_1, f(x_1)), (x_2, f(x_2)), (x_3, f(x_3))$. El punto
+del lado derecho de Jensen (el círculo blanco) es una combinación convexa de
+los vértices, así que cae dentro del triángulo. El punto azul sobre la curva
+es $f$ del centroide en $x$. La separación naranja entre ellos es el gap de
+Jensen, siempre $\geq 0$.
+
+### Demostración
+
+<Proof>
+Sean $x_1, x_2, x_3 \in \mathbb{R}$ y $\lambda_1, \lambda_2, \lambda_3 \geq 0$
+con $\lambda_1 + \lambda_2 + \lambda_3 = 1$.
+
+<Step n={1} title="Caso degenerado: λ₃ = 1">
+Si $\lambda_3 = 1$, entonces $\lambda_1 = \lambda_2 = 0$ y la desigualdad se
+reduce a $f(x_3) \leq f(x_3)$, que vale.
+
+<Why>
+Sacarse de encima el caso degenerado **antes** del paso central evita una
+división por cero más adelante (vamos a dividir por $1 - \lambda_3$). Es la
+estrategia estándar: si una hipótesis te impide hacer una operación, manejá
+el caso aparte y seguí con el caso "general" donde la operación es válida.
+</Why>
+</Step>
+
+<Step n={2} title="Caso general: definir pesos reducidos μ₁, μ₂">
+Asumimos $\lambda_3 < 1$. Definimos
+$$
+\mu_1 = \frac{\lambda_1}{1 - \lambda_3},
+\qquad
+\mu_2 = \frac{\lambda_2}{1 - \lambda_3}.
+$$
+Como $\lambda_1, \lambda_2 \geq 0$ y $1 - \lambda_3 > 0$, queda $\mu_i \geq 0$,
+y
+$$
+\mu_1 + \mu_2 = \frac{\lambda_1 + \lambda_2}{1 - \lambda_3}
+\;=\; \frac{1 - \lambda_3}{1 - \lambda_3} \;=\; 1.
+$$
+Es decir, $(\mu_1, \mu_2)$ son pesos convexos.
+
+<Why>
+La idea: la definición de convexidad solo habla de pesos que **suman 1**.
+Tenemos tres pesos que suman 1 ($\lambda_i$), pero los dos primeros suman
+$1 - \lambda_3$, no 1. Para usar la convexidad sobre los dos primeros,
+**renormalizamos** dividiendo por $1 - \lambda_3$. Es un truco recurrente:
+"sacar afuera" un peso para reducir un problema de tres a dos.
+</Why>
+</Step>
+
+<Step n={3} title="Reescribir la combinación factorizando">
+Sea $y = \mu_1 x_1 + \mu_2 x_2$. Entonces
+$$
+\lambda_1 x_1 + \lambda_2 x_2 + \lambda_3 x_3
+\;=\; (1 - \lambda_3)\,(\mu_1 x_1 + \mu_2 x_2) + \lambda_3 x_3
+\;=\; (1 - \lambda_3)\,y + \lambda_3\,x_3.
+$$
+
+<Why>
+Esta es la **factorización** que sugiere el enunciado. Ahora la combinación
+de tres términos quedó escrita como **combinación convexa de dos puntos**
+($y$ y $x_3$, con pesos $(1 - \lambda_3)$ y $\lambda_3$). Eso es lo que la
+definición de convexidad sabe manipular directamente. La elección
+$\lambda = \lambda_3$ no es accidental: agrupamos los dos primeros porque
+queremos que el tercero quede "afuera" de la combinación interna.
+</Why>
+</Step>
+
+<Step n={4} title="Aplicar convexidad a la combinación externa">
+Por convexidad de $f$ aplicada a los puntos $y, x_3$ con pesos $1 - \lambda_3,
+\lambda_3$:
+$$
+f\big((1 - \lambda_3)\,y + \lambda_3\,x_3\big)
+\;\leq\; (1 - \lambda_3)\,f(y) + \lambda_3\,f(x_3).
+$$
+
+<Why>
+Usamos la definición de convexidad por primera vez. Notá que estamos
+aplicándola a **dos** puntos ($y, x_3$), no a tres: la definición original
+basta para esto.
+</Why>
+</Step>
+
+<Step n={5} title="Aplicar convexidad otra vez a y">
+Como $\mu_1, \mu_2 \geq 0$ con $\mu_1 + \mu_2 = 1$, por convexidad:
+$$
+f(y) \;=\; f(\mu_1 x_1 + \mu_2 x_2)
+\;\leq\; \mu_1 f(x_1) + \mu_2 f(x_2).
+$$
+
+<Why>
+Segunda y última aplicación de la definición. La acabamos de usar dos veces:
+una para "abrir" la combinación de tres en $y$ vs $x_3$, y otra para "abrir"
+$y$ en sus dos componentes. Esa cascada de dos aplicaciones es la firma del
+caso $n = 3$.
+</Why>
+</Step>
+
+<Step n={6} title="Combinar las desigualdades">
+Sustituyendo el paso 5 en el paso 4:
+$$
+\begin{aligned}
+f(\lambda_1 x_1 + \lambda_2 x_2 + \lambda_3 x_3)
+&\leq (1 - \lambda_3)\big(\mu_1 f(x_1) + \mu_2 f(x_2)\big) + \lambda_3 f(x_3) \\
+&= (1 - \lambda_3)\mu_1\,f(x_1) + (1 - \lambda_3)\mu_2\,f(x_2) + \lambda_3 f(x_3) \\
+&= \lambda_1 f(x_1) + \lambda_2 f(x_2) + \lambda_3 f(x_3). \quad\square
+\end{aligned}
+$$
+
+<Why>
+La última igualdad usa que $(1 - \lambda_3)\,\mu_i = (1 - \lambda_3) \cdot
+\dfrac{\lambda_i}{1 - \lambda_3} = \lambda_i$ para $i = 1, 2$. Así
+recuperamos los pesos originales: la renormalización del paso 2 se cancela
+exactamente con el factor $(1 - \lambda_3)$ que sacamos al factorizar.
+**Toda la prueba es solo álgebra que reduce $n=3$ a dos aplicaciones de
+$n=2$.**
+</Why>
+</Step>
+</Proof>
+
+### Errores típicos en (b)
+
+<Warning>
+- **No tratar el caso $\lambda_3 = 1$.** Sin esa salvedad, dividir por
+  $1 - \lambda_3$ es ilegal.
+- **Olvidar verificar que $\mu_1 + \mu_2 = 1$.** Sin eso no podés invocar la
+  convexidad para escribir $f(y) \leq \mu_1 f(x_1) + \mu_2 f(x_2)$.
+- **Querer "demostrar" la convexidad** en cada uso. La convexidad es la
+  hipótesis: la usás dos veces, no la probás.
+- Confundir cuál es el peso "externo": agrupamos $x_1, x_2$ y dejamos $x_3$
+  afuera; el peso externo del bloque interno es $1 - \lambda_3$.
+</Warning>
+
+---
+
+## Parte (c): Jensen para n puntos por inducción
+
+### Intuición
+
+La parte (b) es exactamente el paso $n = 2 \to n = 3$. La inducción solo
+generaliza ese mismo movimiento: dado el resultado para $n - 1$ puntos, lo
+extendemos a $n$ usando la **misma factorización**: agrupar los primeros
+$n-1$ y dejar el último afuera.
+
+### Demostración
+
+<Proof>
+Inducción sobre $n$.
+
+<Step n={1} title="Caso base n = 2">
+Para $n = 2$, la afirmación es
+$$
+f(\lambda_1 x_1 + \lambda_2 x_2) \;\leq\; \lambda_1 f(x_1) + \lambda_2 f(x_2)
+$$
+con $\lambda_1, \lambda_2 \geq 0$ y $\lambda_1 + \lambda_2 = 1$. Eso es la
+**definición de convexidad** con $t = \lambda_1$ y $1 - t = \lambda_2$.
+
+<Why>
+La inducción tiene que arrancar de algún lado y el lado natural es la
+definición misma. No probamos nada nuevo: solo reconocemos que el caso $n=2$
+es la hipótesis de partida.
+</Why>
+</Step>
+
+<Step n={2} title="Hipótesis inductiva">
+Suponemos que el resultado vale para $n - 1$: para todo
+$y_1, \dots, y_{n-1} \in \mathbb{R}$ y $\mu_1, \dots, \mu_{n-1} \geq 0$ con
+$\sum_{i=1}^{n-1} \mu_i = 1$,
+$$
+f\!\left(\sum_{i=1}^{n-1} \mu_i y_i\right) \;\leq\;
+\sum_{i=1}^{n-1} \mu_i f(y_i).
+$$
+
+<Why>
+La hipótesis inductiva es lo que **vamos a poder usar gratis** para
+demostrar el caso $n$. Anotala explícitamente: vas a invocarla en el paso 5.
+</Why>
+</Step>
+
+<Step n={3} title="Caso degenerado: λₙ = 1">
+Sean $x_1, \dots, x_n$ y $\lambda_1, \dots, \lambda_n \geq 0$ con
+$\sum \lambda_i = 1$. Si $\lambda_n = 1$, entonces $\lambda_1 = \cdots =
+\lambda_{n-1} = 0$ y la desigualdad se reduce a $f(x_n) \leq f(x_n)$.
+
+<Why>
+Mismo motivo que en la parte (b): blindamos la división por $1 - \lambda_n$
+manejando aparte el caso en que el denominador se anula.
+</Why>
+</Step>
+
+<Step n={4} title="Caso general: pesos reducidos y factorización">
+Asumimos $\lambda_n < 1$. Definimos
+$$
+\mu_i = \frac{\lambda_i}{1 - \lambda_n} \quad (i = 1, \dots, n - 1).
+$$
+Cada $\mu_i \geq 0$ y $\sum_{i=1}^{n-1} \mu_i = \dfrac{\sum_{i=1}^{n-1}
+\lambda_i}{1 - \lambda_n} = \dfrac{1 - \lambda_n}{1 - \lambda_n} = 1$.
+
+Sea $y = \sum_{i=1}^{n-1} \mu_i x_i$. Entonces
+$$
+\sum_{i=1}^{n} \lambda_i x_i \;=\; (1 - \lambda_n)\,y + \lambda_n\,x_n.
+$$
+
+<Why>
+Replicamos paso por paso lo que hicimos en (b). El movimiento clave es
+"comprimir" los primeros $n - 1$ términos en un único punto $y$, ponderando
+con los pesos renormalizados $\mu_i$. Después la combinación queda como
+combinación convexa de **dos** puntos, $y$ y $x_n$.
+</Why>
+</Step>
+
+<Step n={5} title="Aplicar convexidad y la hipótesis inductiva">
+Por convexidad (caso $n = 2$):
+$$
+f\big((1 - \lambda_n)\,y + \lambda_n\,x_n\big)
+\;\leq\; (1 - \lambda_n)\,f(y) + \lambda_n\,f(x_n).
+$$
+
+Por hipótesis inductiva aplicada a $\mu_1, \dots, \mu_{n-1}$ y
+$x_1, \dots, x_{n-1}$:
+$$
+f(y) \;=\; f\!\left(\sum_{i=1}^{n-1} \mu_i x_i\right)
+\;\leq\; \sum_{i=1}^{n-1} \mu_i f(x_i).
+$$
+
+<Why>
+Acá es donde la inducción gana algo: la primera desigualdad usa la
+definición original (n=2); la segunda usa el caso $n - 1$ que asumimos
+gratis. Combinándolas, llegamos a $n$.
+</Why>
+</Step>
+
+<Step n={6} title="Combinar y simplificar">
+Sustituyendo:
+$$
+\begin{aligned}
+f\!\left(\sum_{i=1}^{n} \lambda_i x_i\right)
+&\leq (1 - \lambda_n)\sum_{i=1}^{n-1} \mu_i f(x_i) + \lambda_n f(x_n) \\
+&= \sum_{i=1}^{n-1} (1 - \lambda_n)\mu_i\,f(x_i) + \lambda_n f(x_n) \\
+&= \sum_{i=1}^{n-1} \lambda_i f(x_i) + \lambda_n f(x_n)
+\;=\; \sum_{i=1}^{n} \lambda_i f(x_i). \quad\square
+\end{aligned}
+$$
+
+<Why>
+La cancelación $(1 - \lambda_n)\,\mu_i = \lambda_i$ es la misma de la parte
+(b). La inducción está completa: probamos $n=2$ y, suponiendo $n-1$,
+deducimos $n$. Eso cubre todos los $n \geq 2$.
+</Why>
+</Step>
+</Proof>
+
+<Example title="Interpretación geométrica">
+Con $n$ puntos sobre la curva, formamos su casco convexo: un polígono cuyos
+vértices son $(x_i, f(x_i))$. La desigualdad de Jensen dice que el polígono
+queda **por encima** del gráfico de $f$ en el intervalo $[\min x_i, \max x_i]$.
+Equivalentemente, el epigrafo de $f$ es convexo: cualquier combinación
+convexa de puntos del epigrafo sigue en el epigrafo.
+</Example>
+
+### Errores típicos en (c)
+
+<Warning>
+- **Confundir hipótesis inductiva con tesis.** En el paso 2 estás *suponiendo*
+  $n - 1$, no probándolo.
+- Volver a probar el caso $n = 2$ desde cero. Es la **definición**: ya está.
+- Aplicar la inducción "para abajo" (de $n$ a $n - 1$). Siempre es de
+  $n - 1$ a $n$.
+- Olvidar que el resultado vale para todo $n \geq 2$, **incluso $n$ enorme**:
+  por eso la inducción es necesaria, un argumento ad-hoc no escala.
+</Warning>
+
+---
+
+## Parte (d): convexidad de $-\ln x$
+
+### Intuición
+
+$g(x) = -\ln x$ está definida en $\mathbb{R}_{>0}$, con derivadas $g'(x) =
+-1/x$ y $g''(x) = 1/x^2$. La segunda derivada es estrictamente positiva en
+todo $\mathbb{R}_{>0}$, así que la función es (estrictamente) convexa allí.
+
+<NegLogDemo />
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Calcular las derivadas de g">
+$$
+g(x) = -\ln x, \qquad g'(x) = -\frac{1}{x}, \qquad g''(x) = \frac{1}{x^2}.
+$$
+
+<Why>
+$g$ es $C^\infty$ en $\mathbb{R}_{>0}$, así que aplicar la caracterización
+$f \in C^2 \Rightarrow (f \text{ convexa} \iff f'' \geq 0)$ es legítimo.
+Calculamos $g''$ directamente.
+</Why>
+</Step>
+
+<Step n={2} title="Verificar g'' > 0 en R>0">
+Para todo $x > 0$, $g''(x) = 1/x^2 > 0$ (estrictamente positiva).
+
+<Why>
+La caracterización del Ej2 pedía $f'' \geq 0$ para concluir convexidad. Acá
+tenemos algo más fuerte ($> 0$ estricto), lo que también implica
+**convexidad estricta**: la cuerda queda *estrictamente* por encima del
+gráfico salvo en los extremos. Esto va a ser útil más tarde para discutir
+cuándo AM = GM.
+</Why>
+</Step>
+
+<Step n={3} title="Concluir convexidad por la caracterización">
+Como $g \in C^2(\mathbb{R}_{>0})$ y $g''(x) \geq 0$ para todo $x > 0$, $g$ es
+convexa en $\mathbb{R}_{>0}$. $\quad\square$
+
+<Why>
+Acá invocamos la **recíproca** de la parte (d) del Ej2: $f''\geq 0 \Rightarrow
+f$ convexa para $f \in C^2$. La prueba de esa recíproca usa Taylor con resto
+de Lagrange (no la haremos en este ejercicio, está en las notas).
+</Why>
+</Step>
+</Proof>
+
+---
+
+## Parte (e): AM-GM como aplicación de Jensen
+
+### Intuición
+
+Jensen aplicado a una función convexa cualquiera da una desigualdad útil. La
+elección **mágica** es $g(x) = -\ln x$: convertís sumas en productos vía
+logaritmo, y "convexa hacia arriba" se traduce en una desigualdad entre
+**promedio** y **producto**. Como $-\ln$ invierte las desigualdades
+(monótona decreciente), Jensen "$f \leq$ promedio" se convierte en "promedio
+$\geq$ media geométrica".
+
+<AMGMDemo />
+
+### Demostración
+
+<Proof>
+Sean $x_1, \dots, x_n > 0$.
+
+<Step n={1} title="Aplicar Jensen a g(x) = −ln x con pesos uniformes">
+Por la parte (c) aplicada a $g(x) = -\ln x$ (convexa por (d)) con
+$\lambda_i = 1/n$:
+$$
+g\!\left(\sum_{i=1}^n \tfrac{1}{n}\,x_i\right)
+\;\leq\; \sum_{i=1}^n \tfrac{1}{n}\,g(x_i),
+$$
+es decir,
+$$
+-\ln\!\left(\frac{x_1 + \cdots + x_n}{n}\right)
+\;\leq\; -\frac{1}{n}\sum_{i=1}^n \ln x_i.
+$$
+
+<Why>
+Pesos uniformes son la elección natural para hablar de **promedio
+aritmético**: $\sum (1/n) x_i$ es exactamente $\bar{x}$. Si tomáramos pesos
+no uniformes, la conclusión sería la AM-GM **ponderada** (otra desigualdad
+clásica).
+</Why>
+</Step>
+
+<Step n={2} title="Convertir suma de logaritmos en logaritmo de producto">
+Por la propiedad $\ln(ab) = \ln a + \ln b$:
+$$
+\frac{1}{n}\sum_{i=1}^n \ln x_i
+\;=\; \frac{1}{n}\,\ln(x_1 \cdots x_n)
+\;=\; \ln\!\left((x_1 \cdots x_n)^{1/n}\right).
+$$
+Sustituyendo en el paso 1:
+$$
+-\ln\!\left(\frac{x_1 + \cdots + x_n}{n}\right)
+\;\leq\; -\ln\!\left((x_1 \cdots x_n)^{1/n}\right).
+$$
+
+<Why>
+Usamos dos propiedades del logaritmo: suma a producto, y
+$\frac{1}{n}\ln a = \ln a^{1/n}$. Acá aparece la **media geométrica**
+naturalmente: $(x_1 \cdots x_n)^{1/n}$ es la $n$-ésima raíz del producto.
+Esto solo funciona porque los $x_i$ son **positivos**: el logaritmo no está
+definido para $x \leq 0$, y la GM no tiene sentido si algún $x_i$ es
+negativo.
+</Why>
+</Step>
+
+<Step n={3} title="Multiplicar por −1 y exponenciar">
+Multiplicamos por $-1$ (invierte el sentido):
+$$
+\ln\!\left(\frac{x_1 + \cdots + x_n}{n}\right)
+\;\geq\; \ln\!\left((x_1 \cdots x_n)^{1/n}\right).
+$$
+Como $\ln$ es estrictamente creciente, la desigualdad sobrevive al
+exponenciar:
+$$
+\frac{x_1 + x_2 + \cdots + x_n}{n}
+\;\geq\; (x_1 x_2 \cdots x_n)^{1/n}. \quad\square
+$$
+
+<Why>
+Dos pasos cosméticos. **Multiplicar por $-1$** invierte $\leq$ a $\geq$
+(regla básica de desigualdades). **Exponenciar** preserva el sentido porque
+$e^x$ es estrictamente creciente: $a \geq b \iff e^a \geq e^b$. Sin
+positividad de $x_i$ no podríamos haber tomado logaritmo, y todo se rompe.
+</Why>
+</Step>
+</Proof>
+
+<Example title="Caso de igualdad">
+La AM-GM tiene igualdad **si y solo si** $x_1 = x_2 = \cdots = x_n$. Una
+dirección es directa (todos iguales $\Rightarrow$ AM = GM = $x_1$). La otra
+viene de la **convexidad estricta** de $-\ln$: si los $x_i$ no son todos
+iguales, la desigualdad de Jensen es estricta y el gap es positivo.
+</Example>
+
+### Errores típicos en (e)
+
+<Warning>
+- **Olvidar la positividad** $x_i > 0$. Sin ella ni el logaritmo ni la GM
+  tienen sentido.
+- **Confundir el sentido** al multiplicar por $-1$. Cada vez que aparece un
+  $-\ln$, tenés un cambio de sentido al final.
+- **Saltarse la conversión $\frac{1}{n} \ln a = \ln a^{1/n}$**. Es un paso
+  microscópico pero es donde aparece la raíz $n$-ésima.
+- Pensar que la AM-GM **necesita** $-\ln$: en realidad, la primera versión
+  histórica usa otros argumentos. Pero esta vía es la más limpia y conecta
+  directamente con la convexidad.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="¿Por qué la prueba de (b) trata el caso λ₃ = 1 aparte?"
+>
+Porque en el paso siguiente dividimos por $1 - \lambda_3$, lo cual es
+indefinido si $\lambda_3 = 1$. Pero el caso $\lambda_3 = 1$ obliga a
+$\lambda_1 = \lambda_2 = 0$ y la desigualdad colapsa a $f(x_3) \leq f(x_3)$,
+que es trivial. Manejarlo aparte es más limpio que insertar excepciones en
+medio del argumento.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="En (c), ¿qué falla si intentás hacer la inducción 'desde adentro' (agrupando los puntos del medio en lugar del último)?"
+>
+Nada falla matemáticamente; solo la notación se vuelve más fea. La elección
+de "sacar el último" $\lambda_n$ es **convencional**, no esencial. Cualquier
+elección de cuál peso "factorizar afuera" funciona, siempre que ese peso sea
+$< 1$. Por simetría, podés renombrar para que el peso elegido sea el último.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Cuándo vale la igualdad en Jensen para f estrictamente convexa?"
+>
+Si $f$ es estrictamente convexa, la igualdad
+$f(\sum \lambda_i x_i) = \sum \lambda_i f(x_i)$ vale **si y solo si** todos
+los $x_i$ con $\lambda_i > 0$ son iguales. Es decir, los puntos efectivos
+(los que tienen peso) coinciden. Si todos los $x_i$ son distintos pero algún
+$\lambda_i = 0$, el correspondiente $x_i$ no cuenta.
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="¿Qué desigualdad obtenés si aplicás Jensen a g(x) = −ln x con pesos no uniformes λᵢ?"
+>
+La **AM-GM ponderada**:
+$$
+\sum_{i=1}^n \lambda_i x_i \;\geq\; \prod_{i=1}^n x_i^{\lambda_i},
+$$
+con $\lambda_i \geq 0$ y $\sum \lambda_i = 1$. El promedio aritmético se
+reemplaza por una combinación convexa, y la GM se reemplaza por un producto
+con exponentes $\lambda_i$. La igualdad sigue ocurriendo cuando todos los
+$x_i$ con $\lambda_i > 0$ son iguales.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Por qué Jensen 'aplica' a -ln pero no a ln?"
+>
+Porque $-\ln$ es **convexa** y Jensen pide convexidad. La función $\ln$ es
+**cóncava** ($\ln'' = -1/x^2 < 0$), así que satisface la desigualdad
+**inversa**: $\ln(\sum \lambda_i x_i) \geq \sum \lambda_i \ln x_i$. Esa es la
+desigualdad de Jensen para funciones cóncavas, equivalente a aplicar la
+versión usual a $-\ln$ y multiplicar por $-1$. Llegan al mismo punto, pero
+hay que tener cuidado con el sentido.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**Combinación convexa.** $\sum \lambda_i x_i$ con $\lambda_i \geq 0$,
+$\sum \lambda_i = 1$.
+
+**Jensen (n=3, parte b).** El truco es factorizar
+$\sum_{i=1}^{3} \lambda_i x_i = (1-\lambda_3)\,y + \lambda_3\,x_3$ con
+$y = \sum_{i=1}^{2} \mu_i x_i$ y $\mu_i = \lambda_i / (1 - \lambda_3)$.
+Aplicar convexidad **dos veces**.
+
+**Jensen (n general, parte c).** Inducción $n - 1 \to n$: la misma
+factorización, sacando $x_n$ afuera, y la hipótesis inductiva sobre los
+primeros $n - 1$.
+
+**Convexidad de $-\ln$.** $g''(x) = 1/x^2 > 0$ en $\mathbb{R}_{>0}$.
+
+**AM-GM (parte e).** Jensen aplicado a $-\ln$ con $\lambda_i = 1/n$:
+$$
+\frac{x_1 + \cdots + x_n}{n} \;\geq\; (x_1 \cdots x_n)^{1/n}.
+$$
+Igualdad sii todos los $x_i$ son iguales.
+
+**Caso degenerado.** Siempre acordate de manejar aparte $\lambda_n = 1$:
+si no, dividís por cero al renormalizar.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p1-ej3" />

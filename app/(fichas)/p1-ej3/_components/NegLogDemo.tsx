@@ -98,9 +98,9 @@ export function NegLogDemo() {
           <Tex tex={tex} />
         </div>
         <div className="text-xs text-ink-500">
-          La curva $g(x) = -\ln x$ se "abre hacia arriba" en todo $\mathbb{R}_{>0}$
-          porque $g''(x) = 1/x^2 &gt; 0$. Visualmente: la cuerda nunca cae por
-          debajo del gráfico.
+          La curva g(x) = −ln x se "abre hacia arriba" en todo (0, ∞) porque
+          g″(x) = 1/x² es estrictamente positiva. Visualmente: la cuerda
+          nunca cae por debajo del gráfico.
         </div>
       </div>
     </div>

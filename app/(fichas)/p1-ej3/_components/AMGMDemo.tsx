@@ -104,9 +104,9 @@ export function AMGMDemo() {
       </div>
 
       <div className="text-xs text-ink-500">
-        El gap se anula cuando todos los $x_i$ son iguales. Probá con un
-        $x_j$ muy chico: la GM colapsa hacia 0 mientras la AM apenas baja, y
-        el gap explota.
+        El gap se anula cuando todos los xᵢ son iguales. Probá con un xⱼ muy
+        chico: la GM colapsa hacia 0 mientras la AM apenas baja, y el gap
+        explota.
       </div>
     </div>
   );
