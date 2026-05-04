@@ -1,0 +1,96 @@
+/* print stylesheet — importado desde app/globals.css */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 22mm 18mm;
+  }
+
+  html {
+    font-size: 11pt;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  nav[aria-label="Fichas"],
+  nav[aria-label="Navegación entre fichas"],
+  aside[data-no-print],
+  .no-print,
+  button,
+  [data-no-print] {
+    display: none !important;
+  }
+
+  /* hide autolink-headings anchors in print */
+  .anchor,
+  a.anchor,
+  a[aria-hidden="true"][tabindex="-1"] {
+    display: none !important;
+  }
+
+  a[href^="http"]::after,
+  a[href^="//"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #555;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  h2 {
+    break-before: page;
+  }
+
+  figure,
+  pre,
+  table,
+  .callout,
+  .katex-display,
+  [data-callout] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  img,
+  svg {
+    max-width: 100% !important;
+  }
+
+  /* Mafs es SVG, se imprime bien tal cual; solo si hay fallback estático,
+     ocultar el interactivo */
+  .figure-interactive[data-has-static] {
+    display: none !important;
+  }
+
+  .figure-static {
+    display: block !important;
+  }
+
+  /* KaTeX outputea HTML+MathML; en print, ocultar la copia MathML para evitar duplicados */
+  .katex-mathml {
+    display: none !important;
+  }
+}
+
+@media screen {
+  .figure-static {
+    display: none;
+  }
+}

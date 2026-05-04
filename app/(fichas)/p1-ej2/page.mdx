@@ -1,0 +1,524 @@
+import { FichaHeader } from "@/components/exercise/FichaHeader";
+import { Flashcard } from "@/components/exercise/Flashcard";
+import { PrevNextNav } from "@/components/exercise/PrevNextNav";
+import { ConvexBowl3D } from "./_components/ConvexBowl3D";
+import { ConvexityChordDemo } from "./_components/ConvexityChordDemo";
+import { SecantsDemo } from "./_components/SecantsDemo";
+import { TangentsDemo } from "./_components/TangentsDemo";
+
+export const metadata = {
+  title: "P1-Ej2: Convexas en R, desigualdades de cuerdas",
+  description:
+    "Deducir las desigualdades de cuerda, secante y tangente para funciones convexas en R.",
+};
+
+<FichaHeader
+  practico={1}
+  ejercicio={2}
+  title="Convexas en R: desigualdades de cuerdas"
+  estimated_minutes={90}
+/>
+
+## Motivación
+
+Una función es **convexa** cuando, si tomás dos puntos cualesquiera del gráfico
+y los unís con una cuerda, **la cuerda nunca cae por debajo del gráfico**. Eso
+es todo lo que el ejercicio explora: cuatro consecuencias geométricas de esa
+sola idea.
+
+<ConvexBowl3D />
+
+La figura muestra el caso $f(x,y) = x^2 + y^2$ en $\mathbb{R}^2$ (un *bowl*).
+La cuerda roja entre dos puntos del gráfico queda toda arriba de la
+superficie. El segmento naranja mide la separación entre la cuerda y el
+gráfico en el punto medio. Cuando bajamos a $\mathbb{R}$, la superficie se
+vuelve una curva 2D y la cuerda queda arriba en todo el intervalo.
+
+## Definiciones y herramientas
+
+<Definition title="Función convexa en R">
+Sea $I \subset \mathbb{R}$ un intervalo. Decimos que $f \colon I \to \mathbb{R}$
+es **convexa** si, para todo $x, y \in I$ y todo $t \in [0, 1]$,
+$$
+f\big(t\,x + (1-t)\,y\big) \;\leq\; t\,f(x) + (1-t)\,f(y).
+$$
+
+El término $t\,x + (1-t)\,y$ es un punto **entre** $x$ e $y$ (combinación
+convexa). El lado derecho es la altura de la cuerda que une
+$(x, f(x))$ con $(y, f(y))$, evaluada en ese mismo punto intermedio.
+</Definition>
+
+Ese es el único hecho que vamos a usar. Todo lo demás del ejercicio se deduce
+parametrizando el "punto entre $a$ y $b$" con un $x$ explícito.
+
+## Enunciado
+
+Sean $f \colon \mathbb{R} \to \mathbb{R}$ convexa y $a < b$.
+
+- **(a)** Mostrar que para todo $x \in [a, b]$,
+  $$
+  f(x) \;\leq\; \frac{b - x}{b - a}\,f(a) + \frac{x - a}{b - a}\,f(b).
+  $$
+- **(b)** Mostrar que para todo $x \in (a, b)$,
+  $$
+  \frac{f(x) - f(a)}{x - a} \;\leq\; \frac{f(b) - f(a)}{b - a}
+  \;\leq\; \frac{f(b) - f(x)}{b - x}.
+  $$
+  Interpretar gráficamente.
+- **(c)** Si $f$ es diferenciable, deducir que
+  $$
+  f'(a) \;\leq\; \frac{f(b) - f(a)}{b - a} \;\leq\; f'(b).
+  $$
+- **(d)** Si $f$ es dos veces diferenciable, mostrar que $f''(a) \geq 0$ y
+  $f''(b) \geq 0$.
+
+---
+
+## Parte (a): la desigualdad de la cuerda
+
+### Intuición
+
+La parte (a) **es la definición de convexidad** reescrita. La diferencia es
+solo cosmética: en vez de parametrizar el punto intermedio con $t \in [0,1]$,
+lo nombramos directamente $x \in [a, b]$. La conexión es
+
+$$
+t \;=\; \frac{b - x}{b - a}.
+$$
+
+Movés $A$ y $B$ sobre la curva y $x$ entre los dos en la figura; vas a ver
+que **siempre** $f(x) \leq \text{cuerda}(x)$.
+
+<ConvexityChordDemo />
+
+### Demostración
+
+<Proof>
+Sea $x \in [a, b]$. Definimos
+$$
+t \;=\; \frac{b - x}{b - a}.
+$$
+
+<Step n={1} title="t ∈ [0, 1]">
+Como $a \leq x \leq b$, se tiene $0 \leq b - x \leq b - a$, y dividiendo por
+$b - a > 0$ queda $0 \leq t \leq 1$.
+
+<Why>
+Necesitamos chequear esto **antes** de aplicar la definición de convexidad,
+porque la definición exige $t \in [0, 1]$. Si $t$ se nos escapara fuera de
+ese rango, el punto $t\,a + (1-t)\,b$ no sería una combinación convexa
+(no caería en el segmento entre $a$ y $b$) y la hipótesis no aplicaría.
+Acordate: el orden lógico es **definir, verificar rango, aplicar**.
+</Why>
+</Step>
+
+<Step n={2} title="Calcular el complemento 1 − t">
+$$
+1 - t \;=\; 1 - \frac{b - x}{b - a} \;=\; \frac{(b - a) - (b - x)}{b - a}
+\;=\; \frac{x - a}{b - a}.
+$$
+
+<Why>
+La definición de convexidad escribe el peso del segundo punto como $1 - t$.
+Necesitamos esa expresión limpia para reconocer al final el coeficiente que
+nos pide el enunciado, $\dfrac{x - a}{b - a}$. Geométricamente: si
+$\dfrac{b - x}{b - a}$ mide cuán cerca está $x$ del extremo $b$ (dividido
+por la longitud del intervalo), entonces $\dfrac{x - a}{b - a}$ mide cuán
+cerca está de $a$. Suman 1, como tienen que sumar dos pesos convexos.
+</Why>
+</Step>
+
+<Step n={3} title="Verificar que t·a + (1−t)·b = x">
+$$
+t\,a + (1 - t)\,b
+\;=\; \frac{(b - x)\,a + (x - a)\,b}{b - a}
+\;=\; \frac{ab - xa + xb - ab}{b - a}
+\;=\; \frac{x(b - a)}{b - a}
+\;=\; x.
+$$
+
+<Why>
+**Este es el corazón de la prueba.** La definición de convexidad solo nos
+dice algo sobre puntos de la forma $t\,a + (1-t)\,b$, no sobre un $x$
+arbitrario. Para poder usarla con un $x$ cualquiera del intervalo, tenemos
+que mostrar que ese $x$ se puede *escribir* como combinación convexa de los
+extremos. La elección $t = \dfrac{b-x}{b-a}$ no es mágica: es exactamente la
+única elección que hace que la combinación dé $x$.
+</Why>
+</Step>
+
+<Step n={4} title="Aplicar la definición de convexidad">
+Con esos $t$, $1 - t$, $a$, $b$:
+$$
+f(x) \;=\; f\big(t\,a + (1 - t)\,b\big)
+\;\leq\; t\,f(a) + (1 - t)\,f(b)
+\;=\; \frac{b - x}{b - a}\,f(a) + \frac{x - a}{b - a}\,f(b).
+$$
+
+<Why>
+La primera igualdad es el paso 3. La desigualdad del medio es **la única
+hipótesis que usamos**: la convexidad de $f$. La última igualdad es el paso
+2 sustituyendo $1 - t$. Toda la "complicación" del enunciado fue álgebra
+para acomodar la hipótesis original; el contenido matemático real es una
+sola aplicación de la definición.
+</Why>
+</Step>
+</Proof>
+
+### Errores típicos en (a)
+
+<Warning>
+- **No verificar que $t \in [0, 1]$** antes de aplicar la definición de
+  convexidad. Sin esa verificación, no estás usando la hipótesis correctamente.
+- **Mezclar coeficientes** entre $t$ y $1 - t$. Quedate con la regla:
+  el coeficiente de $f(a)$ es $\dfrac{b-x}{b-a}$ (mide cuán cerca está $x$ de
+  $b$, normalizado por la longitud del intervalo).
+- **Saltar el paso $t\,a + (1-t)\,b = x$.** Es el corazón de la prueba; sin él
+  no estás aplicando la definición.
+- Pensar que hay que **probar** la convexidad. La convexidad es **hipótesis**,
+  vos la usás.
+</Warning>
+
+---
+
+## Parte (b): pendientes de las tres secantes
+
+### Intuición
+
+Tres puntos sobre la curva, $a < x < b$. Definimos tres secantes:
+$a \to x$, $a \to b$, y $x \to b$. La parte (b) dice que sus pendientes están
+**ordenadas crecientemente**.
+
+Geométricamente esto es exactamente la convexidad: a medida que la curva se
+abre, las cuerdas tienen pendientes cada vez más grandes.
+
+<SecantsDemo />
+
+### Demostración
+
+<Proof>
+Tenemos $a < x < b$. Por la parte (a),
+$$
+f(x) \;\leq\; \frac{b - x}{b - a}\,f(a) + \frac{x - a}{b - a}\,f(b). \tag{$\star$}
+$$
+
+<Step n={1} title="Primera desigualdad: pendiente a→x ≤ pendiente a→b">
+Restamos $f(a)$ a ambos lados de $(\star)$:
+$$
+f(x) - f(a)
+\;\leq\; \frac{b - x}{b - a}\,f(a) + \frac{x - a}{b - a}\,f(b) - f(a).
+$$
+
+Reescribimos el lado derecho usando que $\dfrac{b - x}{b - a} - 1 =
+-\dfrac{x - a}{b - a}$:
+$$
+f(x) - f(a)
+\;\leq\; -\frac{x - a}{b - a}\,f(a) + \frac{x - a}{b - a}\,f(b)
+\;=\; \frac{x - a}{b - a}\,\big(f(b) - f(a)\big).
+$$
+
+Como $x - a > 0$, dividimos:
+$$
+\frac{f(x) - f(a)}{x - a} \;\leq\; \frac{f(b) - f(a)}{b - a}.
+$$
+
+<Why>
+Toda la prueba es **solo álgebra a partir de (a)**. La idea es: queremos
+hablar de la pendiente entre $a$ y $x$, así que ponemos $f(a)$ a la
+izquierda restándolo. La identidad $\dfrac{b-x}{b-a} - 1 = -\dfrac{x-a}{b-a}$
+no es un truco; es simplemente sumar la fracción $\dfrac{b-x - (b-a)}{b-a}$.
+La división por $x - a > 0$ preserva el sentido de la desigualdad: si
+fuera $x - a < 0$ tendríamos que **invertir el signo**, y por eso el
+enunciado pide $a < x < b$.
+</Why>
+</Step>
+
+<Step n={2} title="Segunda desigualdad: pendiente a→b ≤ pendiente x→b">
+Restamos $f(b)$ a ambos lados de $(\star)$:
+$$
+f(x) - f(b)
+\;\leq\; \frac{b - x}{b - a}\,f(a) + \frac{x - a}{b - a}\,f(b) - f(b)
+\;=\; \frac{b - x}{b - a}\,f(a) - \frac{b - x}{b - a}\,f(b)
+\;=\; -\frac{b - x}{b - a}\,\big(f(b) - f(a)\big).
+$$
+
+Multiplicamos por $-1$ (cambia el sentido):
+$$
+f(b) - f(x) \;\geq\; \frac{b - x}{b - a}\,\big(f(b) - f(a)\big).
+$$
+
+Como $b - x > 0$, dividimos:
+$$
+\frac{f(b) - f(x)}{b - x} \;\geq\; \frac{f(b) - f(a)}{b - a}.
+$$
+
+<Why>
+La estrategia es **paralela** a la primera desigualdad, pero ahora queremos
+la pendiente entre $x$ y $b$, así que restamos $f(b)$ en lugar de $f(a)$.
+El paso clave es la **multiplicación por $-1$**: como $f(x) - f(b)$ va a
+ser negativo (si $f$ está por encima en $x$), lo damos vuelta para hablar
+de $f(b) - f(x)$, que es la altura de la diferencia hacia arriba. Cada vez
+que multiplicamos o dividimos una desigualdad por algo negativo, el sentido
+se invierte: por eso `$\leq$` se vuelve `$\geq$`.
+</Why>
+</Step>
+</Proof>
+
+### Errores típicos en (b)
+
+<Warning>
+- **Olvidar el signo al dividir o multiplicar por algo negativo.** En esta
+  prueba es clave que $x - a > 0$ y $b - x > 0$.
+- Suponer que la parte (b) requiere algo más fuerte que la parte (a).
+  **No**: la parte (a) sola alcanza, todo lo demás es álgebra.
+- Confundir las secantes. Hay tres puntos y tres secantes; nombrarlas con
+  cuidado evita la confusión.
+</Warning>
+
+---
+
+## Parte (c): tangentes y cuerda (caso diferenciable)
+
+### Intuición
+
+Si $f$ es diferenciable, las pendientes de las secantes que vimos en (b)
+**convergen a las derivadas** cuando los puntos coinciden:
+
+- $\dfrac{f(x) - f(a)}{x - a} \to f'(a)$ cuando $x \to a^+$.
+- $\dfrac{f(b) - f(x)}{b - x} \to f'(b)$ cuando $x \to b^-$.
+
+Combinado con la parte (b), eso da exactamente
+$f'(a) \leq \dfrac{f(b) - f(a)}{b - a} \leq f'(b)$.
+
+Geométricamente: las **tangentes** en $a$ y en $b$ son menos empinada y más
+empinada, respectivamente, que la cuerda.
+
+<TangentsDemo />
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Punto de partida: la cadena de la parte (b)">
+Por la parte (b), para todo $x \in (a, b)$:
+$$
+\frac{f(x) - f(a)}{x - a}
+\;\leq\; \frac{f(b) - f(a)}{b - a}
+\;\leq\; \frac{f(b) - f(x)}{b - x}.
+$$
+
+<Why>
+La parte (c) **no necesita ninguna hipótesis nueva más allá de
+diferenciabilidad**: ya tenemos las desigualdades correctas, solo falta
+ponerles nombre a los límites de las pendientes laterales.
+</Why>
+</Step>
+
+<Step n={2} title="Tomar límites laterales y reconocer las derivadas">
+Tomamos $x \to a^+$ en la primera y $x \to b^-$ en la tercera. Por
+diferenciabilidad de $f$ en $a$ y en $b$:
+$$
+\lim_{x \to a^+} \frac{f(x) - f(a)}{x - a} \;=\; f'(a),
+\qquad
+\lim_{x \to b^-} \frac{f(b) - f(x)}{b - x} \;=\; f'(b).
+$$
+
+<Why>
+La derivada en un punto es, por definición, el **límite del cociente
+incremental**. La pendiente $\dfrac{f(x)-f(a)}{x-a}$ es exactamente ese
+cociente con $h = x - a$, así que tiende a $f'(a)$ cuando $x \to a^+$. La
+segunda fracción se reescribe como $\dfrac{f(b) - f(b - h)}{h}$ con
+$h = b - x$, y tiende a $f'(b)$ cuando $h \to 0^+$. Que sean **límites
+laterales** (por la derecha en $a$, por la izquierda en $b$) no agrega
+condiciones extra porque la diferenciabilidad implica que los límites
+laterales coinciden con la derivada.
+</Why>
+</Step>
+
+<Step n={3} title="Pasar las desigualdades al límite">
+Las desigualdades pasan al límite (no estricto) y queda
+$$
+f'(a) \;\leq\; \frac{f(b) - f(a)}{b - a} \;\leq\; f'(b). \quad\square
+$$
+
+<Why>
+Si $g(x) \leq C$ para todo $x$ cerca de $a$, entonces $\lim g(x) \leq C$.
+Esto es estándar: la desigualdad **no estricta** se preserva al límite.
+La estricta `$<$` **no** se preserva (puede convertirse en igualdad). El
+término del medio $\dfrac{f(b)-f(a)}{b-a}$ es constante respecto de $x$,
+así que pasa intacto. Resultado final: la cuerda tiene pendiente entre las
+dos tangentes, lo que geométricamente significa que la función "abre"
+hacia arriba.
+</Why>
+</Step>
+</Proof>
+
+<Example title="Vía alternativa, sin parte (b)">
+El enunciado nota que esto también se sigue de las desigualdades de
+soporte de funciones convexas diferenciables:
+$$
+f(b) \;\geq\; f(a) + f'(a)(b - a),
+\qquad
+f(a) \;\geq\; f(b) + f'(b)(a - b).
+$$
+
+Reordenando la primera: $\dfrac{f(b) - f(a)}{b - a} \geq f'(a)$.
+Reordenando la segunda (con $a - b < 0$): $\dfrac{f(b) - f(a)}{b - a} \leq f'(b)$.
+Las dos juntas dan el resultado. Esto es independiente de la parte (b) pero
+usa una propiedad más fuerte de las convexas diferenciables.
+</Example>
+
+---
+
+## Parte (d): segunda derivada no negativa
+
+### Intuición
+
+Si la cuerda queda arriba del gráfico, la curva no se puede curvar para abajo.
+"No curvarse para abajo" en cálculo se llama $f'' \geq 0$.
+
+### Demostración
+
+<Proof>
+<Step n={1} title="Reusar parte (c) en un intervalo chico [a, a+h]">
+Supongamos $f$ dos veces diferenciable en un entorno de $a$. Aplicamos la parte
+(c) en el intervalo $[a, a + h]$ para $h > 0$ pequeño:
+$$
+f'(a) \;\leq\; \frac{f(a + h) - f(a)}{h} \;\leq\; f'(a + h).
+$$
+
+<Why>
+**Truco recurrente en análisis**: para sacar información sobre el
+comportamiento *local* de una derivada, aplicar un resultado *global*
+(parte c) en un intervalo cada vez más chico $[a, a+h]$ y mandar $h \to 0$.
+Eso "exprime" información sobre $f''(a)$ a partir de comparaciones entre
+$f'(a)$ y $f'(a+h)$.
+</Why>
+</Step>
+
+<Step n={2} title="Quedarse con la cota útil: f'(a) ≤ f'(a+h)">
+La desigualdad de la izquierda con la de la derecha da, en particular,
+$$
+f'(a) \;\leq\; f'(a + h) \quad \text{para todo } h > 0 \text{ peque\~no}.
+$$
+
+<Why>
+La pendiente del medio $\dfrac{f(a+h)-f(a)}{h}$ no nos interesa para esta
+parte: la usamos solo como puente. Lo que sí nos interesa es comparar
+$f'$ en $a$ con $f'$ en un punto cercano a la derecha. Eso ya lo dice la
+cadena: como ambos extremos cierran sobre el mismo cociente, podemos
+"saltarlo" y comparar las derivadas directamente. Es el viejo
+$x \leq y \leq z \Rightarrow x \leq z$.
+</Why>
+</Step>
+
+<Step n={3} title="Concluir f''(a) ≥ 0 por definición de derivada">
+Es decir, $f'(a + h) - f'(a) \geq 0$. Dividiendo por $h > 0$ y tomando
+$h \to 0^+$ se obtiene $f''(a) \geq 0$.
+
+El argumento para $f''(b) \geq 0$ es simétrico, usando $[b - h, b]$. $\quad\square$
+
+<Why>
+$f''(a)$ es, por definición, $\lim_{h \to 0} \dfrac{f'(a+h) - f'(a)}{h}$.
+Como $f$ es **dos veces** diferenciable, ese límite existe y los límites
+laterales coinciden, así que basta con calcular el límite por la derecha.
+Como el cociente es no negativo para todo $h > 0$ chico, el límite también
+es no negativo. **Atención**: que $f''(a) \geq 0$ no implica que $f''$
+sea continua ni que valga $\geq 0$ globalmente; solo nos dice algo *en*
+$a$. Para tener $f'' \geq 0$ en todo el intervalo, hay que aplicar el
+mismo argumento en cada punto.
+</Why>
+</Step>
+</Proof>
+
+### Errores típicos en (c) y (d)
+
+<Warning>
+- **Pasar al límite con desigualdad estricta.** Las desigualdades estrictas no
+  se preservan al límite; las no estrictas, sí.
+- En (d), olvidar que **necesitás $h > 0$** para dividir sin cambiar el sentido.
+- Confundir $f''(a) \geq 0$ con "la segunda derivada existe": el ejercicio
+  asume que existe, vos solo probás el signo.
+</Warning>
+
+---
+
+## Preguntas de control
+
+<ControlQuestion
+  n={1}
+  question="Si tomamos x igual al punto medio (a+b)/2, ¿qué vale t y qué dice la desigualdad de la parte (a)?"
+>
+$t = \frac{b - (a+b)/2}{b - a} = \frac{1}{2}$. La desigualdad se reduce a
+$f\big(\tfrac{a+b}{2}\big) \leq \tfrac{1}{2}f(a) + \tfrac{1}{2}f(b)$,
+la **convexidad del punto medio**.
+</ControlQuestion>
+
+<ControlQuestion
+  n={2}
+  question="¿Por qué pedimos a estrictamente menor que b, y no menor o igual?"
+>
+Si $a = b$, el denominador $b - a$ se hace cero y las divisiones no tienen
+sentido. Además, el "intervalo" $[a, b]$ se reduciría a un punto y todas las
+desigualdades serían triviales.
+</ControlQuestion>
+
+<ControlQuestion
+  n={3}
+  question="¿Cuándo la desigualdad de la cuerda es estricta en el interior de [a, b]?"
+>
+Cuando $f$ es **estrictamente convexa**, la desigualdad es estricta para todo
+$x \in (a, b)$. Para $f$ convexa pero no estrictamente (por ejemplo, una recta),
+puede haber igualdad: una recta es la cuerda de sí misma.
+</ControlQuestion>
+
+<ControlQuestion
+  n={4}
+  question="Reescribí la desigualdad de la parte (a) en términos de t en [0,1] para volver a la definición original."
+>
+Sustituyendo $x = t\,a + (1-t)\,b$:
+$$
+f\big(t\,a + (1-t)\,b\big) \;\leq\; t\,f(a) + (1-t)\,f(b),
+$$
+que es exactamente la definición de convexidad.
+</ControlQuestion>
+
+<ControlQuestion
+  n={5}
+  question="¿Qué pasa con la prueba de (a) si en lugar de a < b asumiéramos a > b?"
+>
+Todo se mantiene salvo que ahora $b - a < 0$, así que al dividir por $(b - a)$
+hay que invertir las desigualdades. Pero la parte (a) está enunciada con
+$a < b$, así que no hace falta. La definición de convexidad es simétrica en
+$x$ e $y$, por lo que renombrando podés volver siempre al caso $a < b$.
+</ControlQuestion>
+
+---
+
+<Flashcard>
+
+**Definición.** $f$ convexa $\iff$ para todo $x, y$ y $t \in [0, 1]$:
+$f(tx + (1-t)y) \leq tf(x) + (1-t)f(y)$.
+
+**Truco clave (parte a).** Para reescribir la convexidad con $x$ entre $a$ y $b$,
+tomar $t = \dfrac{b - x}{b - a}$, que da $1 - t = \dfrac{x - a}{b - a}$ y
+$t\,a + (1-t)\,b = x$.
+
+**Cadena de pendientes (parte b).**
+$$
+\frac{f(x) - f(a)}{x - a}
+\;\leq\; \frac{f(b) - f(a)}{b - a}
+\;\leq\; \frac{f(b) - f(x)}{b - x}.
+$$
+
+**Tangentes vs cuerda (parte c).** Diferenciable convexa:
+$f'(a) \leq \dfrac{f(b) - f(a)}{b - a} \leq f'(b)$.
+
+**Segunda derivada (parte d).** $f \in C^2$ convexa $\Rightarrow f'' \geq 0$.
+
+**Geometría.** Cuerda arriba del gráfico, secantes con pendientes crecientes,
+tangentes menos/más empinadas que la cuerda en los extremos, curva que no se
+arquea para abajo.
+
+</Flashcard>
+
+<PrevNextNav currentSlug="p1-ej2" />

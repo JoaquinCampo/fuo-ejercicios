@@ -1,0 +1,189 @@
+@import "tailwindcss";
+@import "../styles/print.css";
+
+@theme {
+  /* paleta OKLCH para uniformidad perceptual y dark mode sin banding */
+  --color-paper: oklch(0.99 0.005 90);
+  --color-paper-soft: oklch(0.97 0.005 90);
+  --color-paper-dark: oklch(0.18 0.015 260);
+  --color-paper-dark-soft: oklch(0.22 0.015 260);
+
+  --color-ink-50: oklch(0.98 0.003 260);
+  --color-ink-100: oklch(0.94 0.005 260);
+  --color-ink-200: oklch(0.88 0.008 260);
+  --color-ink-300: oklch(0.78 0.01 260);
+  --color-ink-400: oklch(0.62 0.015 260);
+  --color-ink-500: oklch(0.50 0.02 260);
+  --color-ink-600: oklch(0.40 0.022 260);
+  --color-ink-700: oklch(0.32 0.02 260);
+  --color-ink-800: oklch(0.25 0.02 260);
+  --color-ink-900: oklch(0.18 0.02 260);
+
+  --color-accent-400: oklch(0.70 0.13 250);
+  --color-accent-500: oklch(0.62 0.15 250);
+  --color-accent-600: oklch(0.55 0.15 250);
+  --color-accent-700: oklch(0.48 0.14 250);
+
+  --color-theorem: oklch(0.55 0.12 260);
+  --color-theorem-soft: oklch(0.95 0.025 260);
+  --color-definition: oklch(0.50 0.03 250);
+  --color-definition-soft: oklch(0.95 0.01 250);
+  --color-example: oklch(0.55 0.12 160);
+  --color-example-soft: oklch(0.95 0.025 160);
+  --color-warning: oklch(0.65 0.15 70);
+  --color-warning-soft: oklch(0.96 0.04 70);
+  --color-proof: oklch(0.42 0.02 260);
+
+  /* tipografía: variables se mapean desde next/font en layout.tsx */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-plex-serif), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* escala modular 1.2, body 17px */
+  --text-xs: 0.78rem;
+  --text-sm: 0.875rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.375rem;
+  --text-4xl: 3rem;
+
+  --leading-prose: 1.7;
+  --leading-tight: 1.3;
+  --leading-display: 1.5;
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html {
+  font-family: var(--font-sans);
+  background: var(--color-paper);
+  color: var(--color-ink-900);
+  font-feature-settings: "ss01", "cv11";
+}
+
+html.dark {
+  background: var(--color-paper-dark);
+  color: var(--color-ink-100);
+}
+
+body {
+  min-height: 100dvh;
+}
+
+/* --- prose: cuerpo serif para fichas --- */
+.prose {
+  font-family: var(--font-serif);
+  font-size: var(--text-base);
+  line-height: var(--leading-prose);
+  max-width: 68ch;
+  margin-inline: auto;
+  font-feature-settings: "ss01", "cv11";
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.prose > * + * {
+  margin-top: 1.5rem;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: var(--font-serif);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+}
+
+.prose h2 {
+  font-size: var(--text-2xl);
+  margin-top: 4rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--color-ink-900) 12%, transparent);
+}
+
+.prose h3 {
+  font-size: var(--text-xl);
+  margin-top: 2.5rem;
+}
+
+.prose code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.35em;
+  background: color-mix(in oklch, var(--color-ink-900) 4%, transparent);
+  border-radius: 0.25rem;
+}
+
+/* equations no se rompen entre líneas */
+.katex {
+  white-space: nowrap;
+}
+
+/* --- numeración automática de teoremas y definiciones --- */
+article.prose {
+  counter-reset: theorem definition example;
+}
+
+[data-callout="theorem"] [data-callout-label="theorem"]::after {
+  counter-increment: theorem;
+  content: " " counter(theorem);
+}
+[data-callout="definition"] [data-callout-label="definition"]::after {
+  counter-increment: definition;
+  content: " " counter(definition);
+}
+[data-callout="example"] [data-callout-label="example"]::after {
+  counter-increment: example;
+  content: " " counter(example);
+}
+
+/* --- Mafs: matchear nuestro paper white en lugar del dark default --- */
+.MafsView {
+  --mafs-bg: var(--color-paper);
+  --mafs-fg: var(--color-ink-900);
+  --mafs-origin-color: var(--color-ink-500);
+  --mafs-line-color: var(--color-ink-300);
+  --mafs-muted-color: color-mix(in oklch, var(--color-ink-500) 30%, transparent);
+  --mafs-axis-stroke-width: 1;
+  background: var(--color-paper);
+  color: var(--color-ink-700);
+}
+
+html.dark .MafsView {
+  --mafs-bg: var(--color-paper-dark);
+  --mafs-fg: var(--color-ink-100);
+  --mafs-origin-color: var(--color-ink-300);
+  --mafs-line-color: var(--color-ink-700);
+  background: var(--color-paper-dark);
+  color: var(--color-ink-200);
+}
+
+.katex-display {
+  margin: 1.5rem 0;
+}
+
+/* focus visible global */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-accent-600);
+}
+
+/* respetar reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
