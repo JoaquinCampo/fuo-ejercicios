@@ -26,14 +26,14 @@ export function AMGMDemo() {
   };
 
   const tex = useMemo(() => {
-    const xsList = xs.map((x) => x.toFixed(2)).join(", ");
+    const xsList = xs.map((x) => x.toFixed(2)).join(" + ");
     return `\\underbrace{\\tfrac{${xsList}}{${n}}}_{\\text{AM} = ${am.toFixed(3)}} \\;\\geq\\; \\underbrace{\\sqrt[${n}]{${xs.map((x) => x.toFixed(2)).join(" \\cdot ")}}}_{\\text{GM} = ${gm.toFixed(3)}}`;
   }, [xs, n, am, gm]);
 
   return (
-    <div className="figure-interactive my-8 px-4 py-4 bg-ink-100/40 rounded-md font-sans text-sm space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+    <div className="figure-interactive my-8 px-3 py-4 sm:px-4 bg-ink-100/40 rounded-md font-sans text-sm space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
           <div className="text-ink-700 text-xs uppercase tracking-wider mb-1">
             Cantidad de términos
           </div>
@@ -45,21 +45,21 @@ export function AMGMDemo() {
               step={1}
               value={n}
               onChange={(e) => setN_(Number(e.target.value))}
-              className="w-40 accent-accent-600"
+              className="w-32 sm:w-40 accent-accent-600"
             />
             <span className="font-mono text-base">n = {n}</span>
           </div>
         </div>
         <button
           type="button"
-          className="no-print text-xs font-sans px-3 py-1.5 rounded-sm border border-ink-100 hover:border-accent-600 hover:text-accent-700 transition-colors"
+          className="no-print shrink-0 text-xs font-sans px-3 py-1.5 rounded-sm border border-ink-100 hover:border-accent-600 hover:text-accent-700 transition-colors"
           onClick={() => setValues(xs.map(() => 1))}
         >
           igualar todos a 1
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {xs.map((x, i) => (
           <label key={i} className="block">
             <div className="flex justify-between text-xs mb-1">
@@ -83,7 +83,7 @@ export function AMGMDemo() {
         <Tex tex={tex} block />
       </div>
 
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
         <div className="px-3 py-2 bg-paper rounded-sm">
           <div className="text-xs text-ink-500 uppercase tracking-wider">AM</div>
           <div className="font-mono text-lg">{am.toFixed(3)}</div>

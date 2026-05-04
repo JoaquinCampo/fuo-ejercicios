@@ -12,7 +12,7 @@ export function PrevNextNav({ currentSlug }: { currentSlug: string }) {
     <nav
       aria-label="Navegación entre fichas"
       data-no-print
-      className="not-prose no-print mt-20 pt-8 border-t border-ink-100 grid grid-cols-2 gap-4"
+      className="not-prose no-print mt-16 sm:mt-20 pt-6 sm:pt-8 border-t border-ink-100 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
     >
       <div>
         {prev ? (

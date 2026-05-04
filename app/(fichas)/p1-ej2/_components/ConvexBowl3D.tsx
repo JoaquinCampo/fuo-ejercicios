@@ -71,7 +71,7 @@ export function ConvexBowl3D() {
   return (
     <figure data-no-print className="figure-interactive my-8 not-prose">
       <div className="border border-ink-100 rounded-md overflow-hidden bg-paper">
-        <div className="h-[440px] w-full">
+        <div className="h-[320px] sm:h-[440px] w-full">
           <Canvas
             camera={{ position: [4.5, 4, 5], fov: 38 }}
             shadows={false}

@@ -12,7 +12,7 @@ export function FichaHeader({
   estimated_minutes,
 }: FichaHeaderProps) {
   return (
-    <header className="not-prose mb-12 pb-8 border-b border-ink-100">
+    <header className="not-prose mb-8 sm:mb-12 pb-6 sm:pb-8 border-b border-ink-100">
       <p className="font-sans text-xs uppercase tracking-widest text-ink-500">
         Práctico {practico}, Ejercicio {ejercicio}
         {estimated_minutes != null && (
@@ -22,7 +22,7 @@ export function FichaHeader({
           </>
         )}
       </p>
-      <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight text-ink-900 dark:text-ink-100">
+      <h1 className="mt-3 font-serif text-3xl sm:text-4xl leading-tight tracking-tight text-ink-900 dark:text-ink-100 text-balance">
         {title}
       </h1>
     </header>

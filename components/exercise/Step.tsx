@@ -42,7 +42,7 @@ export function Step({
 
   return (
     <div
-      className="proof-step grid grid-cols-[auto_1fr] gap-x-3 my-4"
+      className="proof-step grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 my-4"
       data-step={n}
     >
       <div className="step-num shrink-0 size-6 rounded-full bg-accent-500/15 text-accent-700 text-xs font-semibold flex items-center justify-center mt-0.5 select-none">
