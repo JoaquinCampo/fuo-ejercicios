@@ -175,10 +175,11 @@ $\arg\min_x \mathcal{L}_\rho(x, z^k, \mu^k) = \arg\min_x \{f(x) + \langle \mu^k,
 
 Completando cuadrados (poniendo $u^k = \mu^k/\rho$ para simplificar):
 $$
-\langle \mu^k, x\rangle + \tfrac\rho2\|x - z^k\|^2 \;=\; \tfrac\rho2\|x - z^k + u^k\|^2 \;-\; \tfrac\rho2\|u^k\|^2 \;-\; \tfrac\rho2\|z^k\|^2 + \ldots
+\langle \mu^k, x\rangle + \tfrac\rho2\|x - z^k\|^2 \;=\; \tfrac\rho2\|x - z^k + u^k\|^2 + C(z^k, u^k),
 $$
 
-(constantes en $x$ que se descartan al minimizar). Conclusión:
+donde $C(z^k, u^k)$ agrupa todos los términos constantes en $x$ (que se
+descartan al minimizar). Conclusión:
 $$
 \boxed{\; x^{k+1} \;=\; \arg\min_x\; f(x) + \tfrac\rho2\|x - z^k + u^k\|^2.\;}
 $$
@@ -400,9 +401,10 @@ variables**.
 <ADMMConvergenceDemo />
 
 Los residuos primal $\|x - z\|$ y dual $\rho\|z - z^{\text{prev}}\|$
-convergen a 0 en escala log; las cotas teóricas dan $O(1/k)$ en residuo
-y $O(1/k)$ en gap dual. La elección de $\rho$ afecta la velocidad pero
-no el límite.
+convergen a 0 en escala log; las cotas teóricas dan $O(1/k)$ en gap de
+objetivo (y en residuos al cuadrado), o equivalentemente $O(1/\sqrt k)$
+en los residuos. La elección de $\rho$ afecta la velocidad pero no el
+límite.
 
 ---
 
