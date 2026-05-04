@@ -1,93 +1,83 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { Tex } from "@/components/math/Tex";
+import type { Trajectory, Vec2 } from "@/components/viz/Descent3D";
 
-type Vec2 = [number, number];
+const Descent3D = dynamic(
+  () => import("@/components/viz/Descent3D").then((m) => m.Descent3D),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="not-prose">
+        <div
+          className="border border-ink-100 rounded-md bg-paper-soft animate-pulse"
+          style={{ height: 460 }}
+        />
+      </div>
+    ),
+  },
+);
+
+type V2 = [number, number];
 
 const N_STEPS = 40;
-
-// f(x) = ½ x^T Q x − b^T x con Q = diag(λ1, λ2), b = (b1, b2)
 const L1 = 1;
 const L2 = 6;
 const B1 = 1.6;
 const B2 = 0.2;
 
-// Conjunto factible: caja [-1, 1] × [-1, 1] (proyección = clamp coordenada a coordenada)
-function projBox(x: Vec2): Vec2 {
+function projBox(x: V2): V2 {
   return [
     Math.max(-1, Math.min(1, x[0])),
     Math.max(-1, Math.min(1, x[1])),
   ];
 }
 
-function gradF(x: Vec2): Vec2 {
+function gradF(x: V2): V2 {
   return [L1 * x[0] - B1, L2 * x[1] - B2];
 }
 
-function fOf(x: Vec2): number {
-  return 0.5 * (L1 * x[0] * x[0] + L2 * x[1] * x[1]) - (B1 * x[0] + B2 * x[1]);
+function fOfVec(p: Vec2): number {
+  return 0.5 * (L1 * p[0] * p[0] + L2 * p[1] * p[1]) - (B1 * p[0] + B2 * p[1]);
 }
 
-function runPG(x0: Vec2, s: number, steps: number): Vec2[] {
-  const traj: Vec2[] = [x0];
-  let x: Vec2 = [...x0] as Vec2;
+// Unconstrained minimum value, used to shift the surface so its lowest
+// point sits on (not below) the rendered floor.
+const F_OFFSET = 0.5 * ((B1 * B1) / L1 + (B2 * B2) / L2);
+
+function f(x: number, y: number): number {
+  return 0.5 * (L1 * x * x + L2 * y * y) - (B1 * x + B2 * y) + F_OFFSET;
+}
+
+function runPG(x0: V2, s: number, steps: number): V2[] {
+  const traj: V2[] = [x0];
+  let x: V2 = [x0[0], x0[1]];
   for (let k = 0; k < steps; k += 1) {
     const g = gradF(x);
-    const u: Vec2 = [x[0] - s * g[0], x[1] - s * g[1]];
+    const u: V2 = [x[0] - s * g[0], x[1] - s * g[1]];
     x = projBox(u);
     traj.push(x);
   }
   return traj;
 }
 
-// Mínimo restringido: el unconstrained es (B1/L1, B2/L2) = (1.6, 0.033),
-// proyectado al box: (1, 0.033). Como (1, 0.033) cumple gradiente
-// activo, ése es x*.
-const X_STAR: Vec2 = [Math.min(1, B1 / L1), Math.min(1, B2 / L2)];
+const X_STAR: V2 = [Math.min(1, B1 / L1), Math.min(1, B2 / L2)];
+const COLOR_TRAJ = "#0ea5e9";
 
 export function PGTrajectoryDemo() {
-  // s óptimo = 2/(m+M) con m = 1, M = 6 → s* = 2/7 ≈ 0.286
+  // s* = 2/(m+M)
   const [s, setS] = useState(2 / (L1 + L2));
 
   const traj = useMemo(() => runPG([-0.9, -0.9], s, N_STEPS), [s]);
 
-  const W = 600;
-  const H = 360;
-  const padX = 40;
-  const padY = 30;
-  const xRange: [number, number] = [-1.4, 1.8];
-  const yRange: [number, number] = [-1.3, 1.3];
-  const innerW = W - 2 * padX;
-  const innerH = H - 2 * padY;
+  const trajectories: Trajectory[] = useMemo(
+    () => [{ label: "P_X(x − s∇f)", color: COLOR_TRAJ, points: traj }],
+    [traj],
+  );
 
-  const xToPx = (xv: number) =>
-    padX + ((xv - xRange[0]) / (xRange[1] - xRange[0])) * innerW;
-  const yToPx = (yv: number) =>
-    padY + ((yRange[1] - yv) / (yRange[1] - yRange[0])) * innerH;
-
-  const buildPath = (t: Vec2[]) =>
-    t
-      .map(([px, py], i) => `${i === 0 ? "M" : "L"} ${xToPx(px)} ${yToPx(py)}`)
-      .join(" ");
-
-  // Curvas de nivel del cuadrático f, recordando f - f* = ½(x − x_unc)^T Q (x − x_unc)
-  // donde x_unc = (B1/L1, B2/L2). Más directo: graficar f(x) = c.
-  const fStarUnc = -(0.5 * (B1 * B1) / L1 + 0.5 * (B2 * B2) / L2);
-  const levels = [-0.5, -0.2, 0.5, 1.5, 3, 5];
-  const ellipseFor = (c: number) => {
-    // f(x) = c → (x1 − B1/L1)^2 / (2(c − fStarUnc)/L1) + (x2 − B2/L2)^2 / (2(c − fStarUnc)/L2) = 1
-    const cShift = c - fStarUnc;
-    if (cShift <= 0) return null;
-    return {
-      cx: B1 / L1,
-      cy: B2 / L2,
-      ax: Math.sqrt((2 * cShift) / L1),
-      ay: Math.sqrt((2 * cShift) / L2),
-    };
-  };
-
-  const finalGap = fOf(traj[traj.length - 1] as Vec2) - fOf(X_STAR);
+  const finalGap = fOfVec(traj[traj.length - 1] as Vec2) - fOfVec(X_STAR);
   const finalDist = Math.hypot(
     (traj[traj.length - 1] as Vec2)[0] - X_STAR[0],
     (traj[traj.length - 1] as Vec2)[1] - X_STAR[1],
@@ -95,126 +85,32 @@ export function PGTrajectoryDemo() {
   const sUpper = 2 / L2;
   const stable = s > 0 && s < sUpper;
 
+  // bowl spans the box plus margin (right side shows unconstrained min direction).
+  const xDomain = [-1.3, 1.8] as const;
+  const yDomain = [-1.3, 1.3] as const;
+
+  // Keep the bowl modest so the camera can look down INTO it. Peak ≈ 1.8 units.
+  const heightScale = 0.22;
+
+  const contourLevels = [0.15, 0.4, 0.9, 1.8, 3.2, 5];
+
   return (
     <div className="figure-interactive my-8">
-      <div className="border border-ink-100 rounded-md overflow-hidden bg-paper">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          width="100%"
-          height="auto"
-          style={{ display: "block" }}
-        >
-          {/* curvas de nivel */}
-          {levels.map((c) => {
-            const e = ellipseFor(c);
-            if (!e) return null;
-            return (
-              <ellipse
-                key={`lev-${c}`}
-                cx={xToPx(e.cx)}
-                cy={yToPx(e.cy)}
-                rx={(e.ax / (xRange[1] - xRange[0])) * innerW}
-                ry={(e.ay / (yRange[1] - yRange[0])) * innerH}
-                stroke="currentColor"
-                strokeOpacity={0.15}
-                fill="none"
-                strokeWidth={1}
-              />
-            );
-          })}
-
-          {/* caja [-1,1]^2 */}
-          <rect
-            x={xToPx(-1)}
-            y={yToPx(1)}
-            width={xToPx(1) - xToPx(-1)}
-            height={yToPx(-1) - yToPx(1)}
-            stroke="var(--color-blue, #2563eb)"
-            strokeOpacity={0.6}
-            fill="var(--color-blue, #2563eb)"
-            fillOpacity={0.05}
-            strokeWidth={1.6}
-          />
-
-          {/* ejes */}
-          <line
-            x1={padX}
-            y1={yToPx(0)}
-            x2={W - padX}
-            y2={yToPx(0)}
-            stroke="currentColor"
-            strokeOpacity={0.15}
-          />
-          <line
-            x1={xToPx(0)}
-            y1={padY}
-            x2={xToPx(0)}
-            y2={H - padY}
-            stroke="currentColor"
-            strokeOpacity={0.15}
-          />
-
-          {/* trayectoria */}
-          <path
-            d={buildPath(traj)}
-            stroke="var(--color-accent-600, #6359e9)"
-            strokeWidth={1.5}
-            fill="none"
-          />
-          {traj.map((p, i) => (
-            <circle
-              key={`pt-${i}`}
-              cx={xToPx(p[0])}
-              cy={yToPx(p[1])}
-              r={i === 0 ? 4 : 2.4}
-              fill="var(--color-accent-600, #6359e9)"
-              stroke="white"
-              strokeWidth={1}
-              opacity={i === 0 || i === traj.length - 1 ? 1 : 0.7}
-            />
-          ))}
-
-          {/* x* */}
-          <circle
-            cx={xToPx(X_STAR[0])}
-            cy={yToPx(X_STAR[1])}
-            r={5}
-            fill="var(--color-success, #16a34a)"
-            stroke="white"
-            strokeWidth={1.5}
-          />
-          <text
-            x={xToPx(X_STAR[0]) + 8}
-            y={yToPx(X_STAR[1]) - 8}
-            fontSize={11}
-            fontFamily="ui-monospace"
-            fill="var(--color-success, #16a34a)"
-          >
-            x*
-          </text>
-
-          {/* unconstrained min (afuera de la caja) */}
-          <circle
-            cx={xToPx(B1 / L1)}
-            cy={yToPx(B2 / L2)}
-            r={4}
-            fill="none"
-            stroke="var(--color-ink-500, #6b7280)"
-            strokeWidth={1.5}
-            strokeDasharray="2 2"
-          />
-          <text
-            x={xToPx(B1 / L1) + 8}
-            y={yToPx(B2 / L2) - 8}
-            fontSize={10}
-            fontFamily="ui-monospace"
-            fill="currentColor"
-            fillOpacity={0.55}
-          >
-            min sin restr.
-          </text>
-        </svg>
-      </div>
+      <Descent3D
+        f={f}
+        xDomain={xDomain}
+        yDomain={yDomain}
+        trajectories={trajectories}
+        optimum={X_STAR}
+        feasible={{ kind: "rect", x: [-1, 1], y: [-1, 1] }}
+        contourLevels={contourLevels}
+        heightScale={heightScale}
+        durationSeconds={9}
+        height={460}
+        ariaLabel="Trayectoria 3D de gradiente proyectado en una caja [-1,1]² sobre una cuadrática elíptica"
+        cameraPosition={[2.6, 3.4, 2.8]}
+        cameraTarget={[0.1, 0.2, 0]}
+      />
 
       <div className="mt-4 px-4 py-3 bg-ink-100/40 rounded-md font-sans text-sm space-y-3">
         <div className="text-ink-700 text-xs uppercase tracking-wider">
@@ -268,11 +164,14 @@ export function PGTrajectoryDemo() {
           </div>
         </div>
         <div className="text-xs text-ink-500">
-          El mínimo sin restricción cae fuera de la caja en (1.6, 0.033). El
-          mínimo restringido es <strong>x* = (1, 0.033)</strong> sobre el lado
-          derecho. Para s ∈ (0, 2/M = {sUpper.toFixed(3)}) el método contrae;
-          fuera de ese intervalo oscila o diverge. El paso óptimo s* = 2/(m+M)
-          minimiza la tasa.
+          Bowl elíptico (más empinado en x₂ que en x₁). El cuadrado azul sobre
+          el piso es la caja factible <strong>[−1, 1]²</strong>. El óptimo sin
+          restricciones cae afuera en (1.6, 0.033); el óptimo restringido x*
+          cae sobre el lado derecho en (1, 0.033). La bola hace un paso de
+          gradiente y luego se proyecta a la caja, lo que se ve en la
+          trayectoria como segmentos rectos que se "pegan" al borde cuando el
+          gradiente apuntaría afuera. Para s ∈ (0, 2/M = {sUpper.toFixed(3)})
+          el método contrae; fuera de ese rango oscila o diverge.
         </div>
       </div>
     </div>
